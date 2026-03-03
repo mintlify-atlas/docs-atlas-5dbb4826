@@ -96,6 +96,24 @@ print(data)
 ```
 </CodeGroup>
 
+## Health check
+
+The API provides a health check endpoint to verify the service and database connectivity:
+
+```bash
+GET /api/health
+```
+
+**Response:**
+```json
+{
+  "status": "UP",
+  "database": "OK"
+}
+```
+
+This endpoint is useful for monitoring and container orchestration health checks.
+
 ## Next steps
 
 <CardGroup cols={2}>

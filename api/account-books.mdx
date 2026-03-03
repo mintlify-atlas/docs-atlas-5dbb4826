@@ -20,7 +20,7 @@ Account books represent individual financial transactions in EasyACT. Each accou
 </ResponseField>
 
 <ResponseField name="amount" type="number" required>
-  Transaction amount (positive for income, negative for expenses)
+  Transaction amount (always a positive value; income vs expense is determined by the action field)
 </ResponseField>
 
 <ResponseField name="description" type="string">
@@ -28,11 +28,11 @@ Account books represent individual financial transactions in EasyACT. Each accou
 </ResponseField>
 
 <ResponseField name="action" type="string" required>
-  Action type ID (e.g., "IN" for income, "OUT" for expense)
+  Action type description (e.g., "收入" for income, "支出" for expense)
 </ResponseField>
 
 <ResponseField name="category" type="string" required>
-  Category ID for the transaction
+  Category description for the transaction (e.g., "飲食", "交通")
 </ResponseField>
 
 ### AccountBookRequest
@@ -106,16 +106,16 @@ print(data)
     "date": "2024-03-15T10:30:00",
     "amount": 5000.0,
     "description": "Monthly salary",
-    "action": "IN",
-    "category": "SALARY"
+    "action": "收入",
+    "category": "其他"
   },
   {
     "id": "2",
     "date": "2024-03-16T14:20:00",
-    "amount": -150.0,
+    "amount": 150.0,
     "description": "Grocery shopping",
-    "action": "OUT",
-    "category": "FOOD"
+    "action": "支出",
+    "category": "飲食"
   }
 ]
 ```
