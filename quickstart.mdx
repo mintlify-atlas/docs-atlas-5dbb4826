@@ -1,80 +1,268 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get EasyACT running on your local machine in minutes using Docker Compose
 ---
 
-## Get started in three steps
+## Prerequisites
 
-Get your documentation site running locally and make your first customization.
-
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
+Before you begin, make sure you have the following installed on your system:
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Docker" icon="docker" href="https://www.docker.com/">
+    Container runtime (version 20.10 or higher recommended)
+  </Card>
+  <Card title="Docker Compose" icon="layer-group" href="https://docs.docker.com/compose/">
+    Multi-container orchestration tool (included with Docker Desktop)
+  </Card>
 </CardGroup>
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  If you're using Docker Desktop, Docker Compose is already included. Otherwise, install it separately following the official documentation.
 </Note>
+
+## Installation
+
+<Steps>
+  <Step title="Clone the repository">
+    Clone the EasyACT repository to your local machine:
+
+    ```bash
+    git clone https://github.com/RL-Small-Project/EasyACT.git
+    cd EasyACT
+    ```
+  </Step>
+
+  <Step title="Start the services">
+    Launch all services with a single command:
+
+    ```bash
+    docker-compose up -d
+    ```
+
+    This command will:
+    - Pull the PostgreSQL 15 image
+    - Build the Spring Boot API container
+    - Build the Vue.js web application container
+    - Create a private network for inter-service communication
+    - Start all three services in detached mode
+
+    <Note>
+      The first startup may take several minutes as Docker builds the images and downloads dependencies.
+    </Note>
+  </Step>
+
+  <Step title="Verify the services">
+    Check that all containers are running:
+
+    ```bash
+    docker-compose ps
+    ```
+
+    You should see three containers running:
+    - `easy_act-web` (port 8000)
+    - `easy_act-api` (port 8080)
+    - `easy_act-db` (port 5432)
+  </Step>
+
+  <Step title="Access the application">
+    Open your browser and navigate to:
+
+    ```
+    http://localhost:8000
+    ```
+
+    You should see the EasyACT login page. You're ready to start tracking your finances!
+  </Step>
+</Steps>
+
+## Service endpoints
+
+Once running, you can access the following services:
+
+<CardGroup cols={2}>
+  <Card title="Web application" icon="browser">
+    **URL:** http://localhost:8000
+    
+    The main user interface for managing your finances
+  </Card>
+  <Card title="API server" icon="server">
+    **URL:** http://localhost:8080
+    
+    REST API backend for data operations
+  </Card>
+  <Card title="API documentation" icon="book-open">
+    **URL:** http://localhost:8080/swagger-ui.html
+    
+    Interactive Swagger UI for exploring API endpoints
+  </Card>
+  <Card title="Database" icon="database">
+    **Host:** localhost:5432
+    
+    PostgreSQL database (accessible for direct queries if needed)
+  </Card>
+</CardGroup>
+
+## Configuration
+
+The default configuration uses the following settings:
+
+<CodeGroup>
+
+```yaml docker-compose.yml
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password
+      POSTGRES_DB: easy_act
+    volumes:
+      - ./data:/var/lib/postgresql/data
+
+  api:
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/easy_act
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres_password
+
+  web:
+    ports:
+      - "8000:80"
+```
+
+</CodeGroup>
+
+<Warning>
+  The default database credentials are for development only. Change them before deploying to production.
+</Warning>
+
+## Managing the application
+
+### View logs
+
+To view logs from all services:
+
+```bash
+docker-compose logs -f
+```
+
+To view logs from a specific service:
+
+```bash
+# Web application logs
+docker-compose logs -f web
+
+# API server logs
+docker-compose logs -f api
+
+# Database logs
+docker-compose logs -f db
+```
+
+### Stop the application
+
+To stop all services while preserving data:
+
+```bash
+docker-compose stop
+```
+
+### Restart the application
+
+To restart all services:
+
+```bash
+docker-compose restart
+```
+
+### Shut down and remove containers
+
+To stop and remove all containers (data in `./data` directory is preserved):
+
+```bash
+docker-compose down
+```
+
+<Warning>
+  To remove all data including the database, run `docker-compose down -v` or manually delete the `./data` directory. This action cannot be undone.
+</Warning>
+
+## Data persistence
+
+Your financial data is stored in the `./data` directory on your host machine. This directory is mounted into the PostgreSQL container, ensuring your data persists even when containers are stopped or removed.
+
+```
+EasyACT/
+├── api/
+├── web/
+├── docker-compose.yml
+└── data/                    # Database files stored here
+    └── postgresql/
+```
+
+<Note>
+  Make sure to back up the `./data` directory regularly to prevent data loss.
+</Note>
+
+## Troubleshooting
+
+### Port already in use
+
+If you see an error about ports 8000 or 8080 being already in use, you can either:
+
+1. Stop the service using that port
+2. Modify the port mapping in `docker-compose.yml`:
+
+```yaml
+services:
+  web:
+    ports:
+      - "3000:80"  # Changed from 8000 to 3000
+```
+
+### Containers fail to start
+
+Check the logs for specific error messages:
+
+```bash
+docker-compose logs
+```
+
+Common issues:
+- Insufficient disk space
+- Docker daemon not running
+- Previous containers not fully removed
+
+### Reset the application
+
+To completely reset EasyACT and start fresh:
+
+```bash
+# Stop and remove containers
+docker-compose down
+
+# Remove database files
+rm -rf ./data
+
+# Rebuild and start
+docker-compose up -d --build
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Explore the API" icon="code" href="http://localhost:8080/swagger-ui.html">
+    Try out API endpoints using the interactive Swagger documentation
+  </Card>
+  <Card title="Learn the architecture" icon="diagram-project" href="/deployment/architecture">
+    Understand how EasyACT's components work together
+  </Card>
+  <Card title="Development guide" icon="terminal" href="/development/project-structure">
+    Set up a local development environment without Docker
+  </Card>
+  <Card title="Report issues" icon="bug" href="https://github.com/RL-Small-Project/EasyACT/issues">
+    Found a bug? Let us know on GitHub
+  </Card>
+</CardGroup>

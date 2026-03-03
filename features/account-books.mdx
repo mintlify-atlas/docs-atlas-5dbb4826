@@ -1,0 +1,174 @@
+---
+title: Account books
+description: Organize your finances with multiple account books in EasyACT
+---
+
+EasyACT uses an account book system to store and organize all your financial transactions. Each transaction is recorded in the account book with complete details including date, amount, category, and transaction type.
+
+## Understanding account books
+
+An account book in EasyACT is the central data structure that holds all your financial records. Think of it as your digital ledger where every income and expense transaction is recorded.
+
+### Account book structure
+
+Each account book entry contains:
+
+- **ID** - Unique auto-generated identifier
+- **Date** - Timestamp of when the transaction occurred (stored in ISO format)
+- **Amount** - Transaction value (stored as decimal)
+- **Description** - Optional text description
+- **Action** - Reference to the transaction type (Income or Expenses)
+- **Category** - Reference to the transaction category (Food, Traffic, etc.)
+
+<Info>
+  The account book uses a relational database structure with foreign key relationships to Actions and Categories tables. This ensures data integrity and enables efficient querying.
+</Info>
+
+## How transactions are stored
+
+When you add a new transaction through the UI, EasyACT performs several operations:
+
+<Steps>
+  <Step title="Validate input data">
+    The system validates all required fields and checks that the amount is greater than zero.
+  </Step>
+  
+  <Step title="Check for existing categories and actions">
+    Before creating a transaction, EasyACT checks if the selected category and action exist in the database.
+    
+    If they don't exist yet, they are automatically created:
+    - New actions are created with their ID and description
+    - New categories are created with their ID and description
+  </Step>
+  
+  <Step title="Create the account book record">
+    The transaction is saved to the account_books table with:
+    - Date formatted as ISO datetime (e.g., "2025-12-26T12:16:29")
+    - Amount as decimal value
+    - Description text (if provided)
+    - Foreign keys to the action and category
+  </Step>
+  
+  <Step title="Return confirmation">
+    The API returns the created record and the UI displays a success notification.
+  </Step>
+</Steps>
+
+## Data persistence
+
+All account book data is persisted in a PostgreSQL database, ensuring:
+
+- **Reliability** - Your financial data is safely stored and won't be lost
+- **Consistency** - Database constraints maintain data integrity
+- **Performance** - Indexed queries provide fast access to your transactions
+- **Scalability** - The system can handle thousands of transactions
+
+<Note>
+  The PostgreSQL database runs in a Docker container with a persistent volume mount, so your data remains intact even when containers are restarted.
+</Note>
+
+## Accessing your account book data
+
+Your account book data is automatically loaded and synchronized across different views:
+
+### In the transaction list
+
+The ListView fetches all account books and displays them in a sortable table:
+
+- Records are automatically sorted by date (newest first)
+- Data refreshes every 60 seconds to stay current
+- Real-time updates when you add, edit, or delete transactions
+
+### In analytics and charts
+
+The ChartView uses account book data to generate insights:
+
+- Monthly summaries are computed from your account book records
+- Charts filter and aggregate transactions by date range
+- Category breakdowns calculate totals from your account book
+
+## State management
+
+EasyACT uses Pinia for centralized state management of account book data:
+
+```javascript
+const store = useAccountStore()
+```
+
+The account store provides:
+
+- **fetchAccountBooks()** - Retrieves all transactions from the API
+- **addAccountBook(data)** - Creates a new transaction
+- **updateAccountBook(id, data)** - Modifies an existing transaction  
+- **deleteAccountBooks(ids)** - Removes one or more transactions
+- **getRecordsByMonth(yearMonth)** - Filters transactions by month
+
+<Tip>
+  The store automatically caches your account book data in memory, reducing the number of API calls and improving performance across the application.
+</Tip>
+
+## Working with multiple account books
+
+While the current implementation uses a single account book table, the architecture supports future expansion to multiple account books:
+
+- The relational design allows adding an account_book_id field to group transactions
+- Categories and actions can be shared across different account books
+- The UI can be extended to switch between different account books
+
+<Info>
+  Future versions of EasyACT may include the ability to create separate account books for different purposes, such as personal expenses, business expenses, or household budgets.
+</Info>
+
+## Data filtering and queries
+
+The account book system supports flexible data queries:
+
+### By date range
+
+Filter transactions by specific time periods:
+- Monthly views show all transactions for a selected month
+- Annual trends aggregate 12 months of data
+- Custom date ranges can be implemented
+
+### By category
+
+Group and analyze transactions by category:
+- Category breakdown shows spending per category
+- Visual charts display category proportions
+- Category-specific totals are calculated
+
+### By action type
+
+Separate income from expenses:
+- Income transactions are filtered by action type
+- Expense transactions are grouped separately
+- Net balance is calculated from both types
+
+## API integration
+
+The account book interacts with the backend API through RESTful endpoints:
+
+| Operation | Endpoint | Method |
+|-----------|----------|--------|
+| Get all records | `/api/account-books` | GET |
+| Create record | `/api/account-books` | POST |
+| Update record | `/api/account-books/{id}` | PUT |
+| Delete records | `/api/account-books` | DELETE |
+
+<Note>
+  All API calls are made through Axios with proper error handling and loading states to provide a smooth user experience.
+</Note>
+
+## Best practices
+
+To get the most out of your account book:
+
+- **Record transactions promptly** - Add transactions as they happen to maintain accuracy
+- **Use consistent categories** - Stick to standard categories for better analytics
+- **Add descriptions** - Brief notes help you remember transaction context
+- **Review regularly** - Check your account book monthly to spot trends
+- **Clean up mistakes** - Use the edit feature to correct errors quickly
+
+<Tip>
+  Set a daily reminder to review and add any missing transactions. Consistency is key to accurate financial tracking.
+</Tip>

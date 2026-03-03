@@ -1,0 +1,395 @@
+---
+title: 'Account books'
+description: 'Manage financial transaction records'
+---
+
+## Overview
+
+Account books represent individual financial transactions in EasyACT. Each account book entry contains information about the date, amount, description, action type (income/expense), and category.
+
+## Data model
+
+### AccountBookResponse
+
+<ResponseField name="id" type="string" required>
+  Unique identifier for the account book entry
+</ResponseField>
+
+<ResponseField name="date" type="string" required>
+  Transaction date in ISO 8601 format (e.g., "2024-03-15T10:30:00")
+</ResponseField>
+
+<ResponseField name="amount" type="number" required>
+  Transaction amount (positive for income, negative for expenses)
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Description or note for the transaction
+</ResponseField>
+
+<ResponseField name="action" type="string" required>
+  Action type ID (e.g., "IN" for income, "OUT" for expense)
+</ResponseField>
+
+<ResponseField name="category" type="string" required>
+  Category ID for the transaction
+</ResponseField>
+
+### AccountBookRequest
+
+<ParamField body="date" type="string (LocalDateTime)" required>
+  Transaction date and time in ISO 8601 format
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Transaction amount
+</ParamField>
+
+<ParamField body="description" type="string">
+  Optional description for the transaction
+</ParamField>
+
+<ParamField body="actionId" type="string" required>
+  ID of the action type (references the Actions resource)
+</ParamField>
+
+<ParamField body="categoryId" type="string" required>
+  ID of the category (references the Categories resource)
+</ParamField>
+
+---
+
+## Get all account books
+
+<Card>
+  <div>
+    **GET** `/api/account-books`
+  </div>
+</Card>
+
+Retrieves a list of all account book entries.
+
+### Response
+
+<ResponseField name="response" type="array">
+  Array of AccountBookResponse objects
+</ResponseField>
+
+### Example request
+
+<CodeGroup>
+```bash curl
+curl http://localhost:8080/api/account-books
+```
+
+```javascript JavaScript
+fetch('http://localhost:8080/api/account-books')
+  .then(response => response.json())
+  .then(data => console.log(data));
+```
+
+```python Python
+import requests
+
+response = requests.get('http://localhost:8080/api/account-books')
+data = response.json()
+print(data)
+```
+</CodeGroup>
+
+### Example response
+
+```json
+[
+  {
+    "id": "1",
+    "date": "2024-03-15T10:30:00",
+    "amount": 5000.0,
+    "description": "Monthly salary",
+    "action": "IN",
+    "category": "SALARY"
+  },
+  {
+    "id": "2",
+    "date": "2024-03-16T14:20:00",
+    "amount": -150.0,
+    "description": "Grocery shopping",
+    "action": "OUT",
+    "category": "FOOD"
+  }
+]
+```
+
+---
+
+## Create account book
+
+<Card>
+  <div>
+    **POST** `/api/account-books`
+  </div>
+</Card>
+
+Creates a new account book entry.
+
+### Request body
+
+<ParamField body="date" type="string" required>
+  Transaction date in ISO 8601 format
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Transaction amount
+</ParamField>
+
+<ParamField body="description" type="string">
+  Optional description for the transaction
+</ParamField>
+
+<ParamField body="actionId" type="string" required>
+  ID of the action type (must exist in Actions)
+</ParamField>
+
+<ParamField body="categoryId" type="string" required>
+  ID of the category (must exist in Categories)
+</ParamField>
+
+### Example request
+
+<CodeGroup>
+```bash curl
+curl -X POST http://localhost:8080/api/account-books \
+  -H "Content-Type: application/json" \
+  -d '{
+    "date": "2024-03-15T10:30:00",
+    "amount": 5000.0,
+    "description": "Monthly salary",
+    "actionId": "IN",
+    "categoryId": "SALARY"
+  }'
+```
+
+```javascript JavaScript
+fetch('http://localhost:8080/api/account-books', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    date: '2024-03-15T10:30:00',
+    amount: 5000.0,
+    description: 'Monthly salary',
+    actionId: 'IN',
+    categoryId: 'SALARY'
+  })
+});
+```
+
+```python Python
+import requests
+
+data = {
+    'date': '2024-03-15T10:30:00',
+    'amount': 5000.0,
+    'description': 'Monthly salary',
+    'actionId': 'IN',
+    'categoryId': 'SALARY'
+}
+
+response = requests.post(
+    'http://localhost:8080/api/account-books',
+    json=data
+)
+```
+</CodeGroup>
+
+### Response
+
+Returns HTTP 200 on success with no response body.
+
+---
+
+## Update account book
+
+<Card>
+  <div>
+    **PUT** `/api/account-books/{id}`
+  </div>
+</Card>
+
+Updates an existing account book entry.
+
+### Path parameters
+
+<ParamField path="id" type="number" required>
+  ID of the account book to update
+</ParamField>
+
+### Request body
+
+<ParamField body="date" type="string" required>
+  Transaction date in ISO 8601 format
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Transaction amount
+</ParamField>
+
+<ParamField body="description" type="string">
+  Optional description for the transaction
+</ParamField>
+
+<ParamField body="actionId" type="string" required>
+  ID of the action type
+</ParamField>
+
+<ParamField body="categoryId" type="string" required>
+  ID of the category
+</ParamField>
+
+### Example request
+
+<CodeGroup>
+```bash curl
+curl -X PUT http://localhost:8080/api/account-books/1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "date": "2024-03-15T10:30:00",
+    "amount": 5500.0,
+    "description": "Monthly salary (updated)",
+    "actionId": "IN",
+    "categoryId": "SALARY"
+  }'
+```
+
+```javascript JavaScript
+fetch('http://localhost:8080/api/account-books/1', {
+  method: 'PUT',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    date: '2024-03-15T10:30:00',
+    amount: 5500.0,
+    description: 'Monthly salary (updated)',
+    actionId: 'IN',
+    categoryId: 'SALARY'
+  })
+});
+```
+
+```python Python
+import requests
+
+data = {
+    'date': '2024-03-15T10:30:00',
+    'amount': 5500.0,
+    'description': 'Monthly salary (updated)',
+    'actionId': 'IN',
+    'categoryId': 'SALARY'
+}
+
+response = requests.put(
+    'http://localhost:8080/api/account-books/1',
+    json=data
+)
+```
+</CodeGroup>
+
+### Response
+
+Returns HTTP 200 on success, or HTTP 404 if the account book is not found.
+
+---
+
+## Delete account book
+
+<Card>
+  <div>
+    **DELETE** `/api/account-books/{id}`
+  </div>
+</Card>
+
+Deletes a specific account book entry.
+
+### Path parameters
+
+<ParamField path="id" type="number" required>
+  ID of the account book to delete
+</ParamField>
+
+### Example request
+
+<CodeGroup>
+```bash curl
+curl -X DELETE http://localhost:8080/api/account-books/1
+```
+
+```javascript JavaScript
+fetch('http://localhost:8080/api/account-books/1', {
+  method: 'DELETE'
+});
+```
+
+```python Python
+import requests
+
+response = requests.delete('http://localhost:8080/api/account-books/1')
+```
+</CodeGroup>
+
+### Response
+
+Returns HTTP 200 on success, or HTTP 404 if the account book is not found.
+
+---
+
+## Batch delete account books
+
+<Card>
+  <div>
+    **DELETE** `/api/account-books/batch`
+  </div>
+</Card>
+
+Deletes multiple account book entries at once.
+
+### Request body
+
+<ParamField body="ids" type="array" required>
+  Array of account book IDs to delete
+</ParamField>
+
+### Example request
+
+<CodeGroup>
+```bash curl
+curl -X DELETE http://localhost:8080/api/account-books/batch \
+  -H "Content-Type: application/json" \
+  -d '[1, 2, 3]'
+```
+
+```javascript JavaScript
+fetch('http://localhost:8080/api/account-books/batch', {
+  method: 'DELETE',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify([1, 2, 3])
+});
+```
+
+```python Python
+import requests
+
+ids = [1, 2, 3]
+response = requests.delete(
+    'http://localhost:8080/api/account-books/batch',
+    json=ids
+)
+```
+</CodeGroup>
+
+### Response
+
+Returns HTTP 200 on success, or HTTP 404 if some account books are not found.

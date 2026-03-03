@@ -1,0 +1,213 @@
+---
+title: Docker Compose deployment
+description: Deploy EasyACT using Docker Compose for a complete containerized setup
+---
+
+## Overview
+
+EasyACT uses Docker Compose to orchestrate all services in a containerized environment. This approach provides a simple, one-command deployment that sets up the web interface, API server, and PostgreSQL database with proper networking.
+
+## Prerequisites
+
+Before deploying EasyACT, ensure you have the following installed:
+
+- [Docker](https://www.docker.com/) (version 20.10 or higher)
+- [Docker Compose](https://docs.docker.com/compose/) (version 2.0 or higher)
+
+## Quick start
+
+<Steps>
+  <Step title="Clone the repository">
+    Clone the EasyACT repository to your local machine:
+
+    ```bash
+    git clone https://github.com/RL-Small-Project/EasyACT.git
+    cd EasyACT
+    ```
+  </Step>
+
+  <Step title="Start the services">
+    Launch all services using Docker Compose:
+
+    ```bash
+    docker-compose up -d
+    ```
+
+    The `-d` flag runs the containers in detached mode (background).
+  </Step>
+
+  <Step title="Access the application">
+    Open your browser and navigate to:
+
+    ```
+    http://localhost:8000
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  The first startup may take several minutes as Docker builds the images and downloads dependencies.
+</Note>
+
+## Services overview
+
+The Docker Compose configuration defines three services:
+
+### Web service
+
+- **Container name**: `easy_act-web`
+- **Port mapping**: `8000:80`
+- **Technology**: Vue.js application served by Nginx
+- **Dependencies**: API service
+
+### API service
+
+- **Container name**: `easy_act-api`
+- **Port mapping**: `8080:8080`
+- **Technology**: Spring Boot application (Java 25)
+- **Dependencies**: Database service
+
+### Database service
+
+- **Container name**: `easy_act-db`
+- **Image**: `postgres:15`
+- **Internal port**: `5432` (not exposed to host)
+- **Data persistence**: `./data` directory
+
+## Managing the deployment
+
+### View logs
+
+To view logs from all services:
+
+```bash
+docker-compose logs -f
+```
+
+To view logs from a specific service:
+
+<CodeGroup>
+```bash Web
+docker-compose logs -f web
+```
+
+```bash API
+docker-compose logs -f api
+```
+
+```bash Database
+docker-compose logs -f db
+```
+</CodeGroup>
+
+### Stop the services
+
+To stop all services while preserving data:
+
+```bash
+docker-compose stop
+```
+
+### Restart the services
+
+To restart all services:
+
+```bash
+docker-compose restart
+```
+
+### Stop and remove containers
+
+To stop and remove all containers (data in volumes is preserved):
+
+```bash
+docker-compose down
+```
+
+<Warning>
+  To remove all containers AND volumes (including database data), use:
+  
+  ```bash
+  docker-compose down -v
+  ```
+  
+  This will permanently delete all stored data.
+</Warning>
+
+### Rebuild services
+
+If you make changes to the source code, rebuild the containers:
+
+```bash
+docker-compose up -d --build
+```
+
+## Networking
+
+All services communicate through a custom bridge network named `app-network`. This provides:
+
+- **Service discovery**: Services can reference each other by name (e.g., `db`, `api`)
+- **Isolation**: The application network is isolated from other Docker networks
+- **Security**: Database is not exposed to the host, only accessible within the network
+
+## Data persistence
+
+The PostgreSQL database persists data in the `./data` directory on the host machine. This directory is automatically created when you first start the services.
+
+<Note>
+  Make sure to back up the `./data` directory regularly to prevent data loss.
+</Note>
+
+## API documentation
+
+Once the services are running, you can access the Swagger UI for API documentation:
+
+```
+http://localhost:8080/swagger-ui.html
+```
+
+## Troubleshooting
+
+### Port conflicts
+
+If you encounter port conflicts, modify the port mappings in `docker-compose.yml`:
+
+```yaml
+services:
+  web:
+    ports:
+      - "3000:80"  # Change 8000 to 3000
+  api:
+    ports:
+      - "9090:8080"  # Change 8080 to 9090
+```
+
+### Database connection issues
+
+If the API cannot connect to the database:
+
+1. Verify all services are running: `docker-compose ps`
+2. Check the database logs: `docker-compose logs db`
+3. Ensure the database has fully started before the API
+
+### Container build failures
+
+If a container fails to build:
+
+1. Clear Docker build cache: `docker-compose build --no-cache`
+2. Remove old containers: `docker-compose down`
+3. Rebuild: `docker-compose up -d --build`
+
+## Production considerations
+
+<Warning>
+  The default configuration is suitable for development and testing. For production deployments, consider:
+  
+  - Changing default database credentials
+  - Using environment-specific configuration files
+  - Setting up SSL/TLS certificates
+  - Configuring proper backup strategies
+  - Implementing monitoring and logging solutions
+</Warning>
+
+See the [Configuration](/deployment/configuration) page for details on customizing environment variables and settings.

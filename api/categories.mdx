@@ -1,0 +1,400 @@
+---
+title: 'Categories'
+description: 'Manage transaction category types'
+---
+
+## Overview
+
+Categories allow you to organize and classify your financial transactions. Each category has a unique ID and a description. Examples include "SALARY", "FOOD", "TRANSPORT", etc. Categories are referenced by account book entries to provide detailed classification of transactions.
+
+## Data model
+
+### CategoryResponse
+
+<ResponseField name="id" type="string" required>
+  Unique identifier for the category (e.g., "SALARY", "FOOD", "TRANSPORT")
+</ResponseField>
+
+<ResponseField name="categoryDescription" type="string" required>
+  Human-readable description of the category
+</ResponseField>
+
+### CategoryRequest
+
+<ParamField body="id" type="string" required>
+  Unique identifier for the category. This should be a short code like "SALARY" or "FOOD".
+</ParamField>
+
+<ParamField body="categoryDescription" type="string" required>
+  Description of the category type
+</ParamField>
+
+---
+
+## Get all categories
+
+<Card>
+  <div>
+    **GET** `/api/categories`
+  </div>
+</Card>
+
+Retrieves a list of all category types.
+
+### Response
+
+<ResponseField name="response" type="array">
+  Array of CategoryResponse objects
+</ResponseField>
+
+### Example request
+
+<CodeGroup>
+```bash curl
+curl http://localhost:8080/api/categories
+```
+
+```javascript JavaScript
+fetch('http://localhost:8080/api/categories')
+  .then(response => response.json())
+  .then(data => console.log(data));
+```
+
+```python Python
+import requests
+
+response = requests.get('http://localhost:8080/api/categories')
+data = response.json()
+print(data)
+```
+</CodeGroup>
+
+### Example response
+
+```json
+[
+  {
+    "id": "SALARY",
+    "categoryDescription": "薪資收入"
+  },
+  {
+    "id": "FOOD",
+    "categoryDescription": "飲食"
+  },
+  {
+    "id": "TRANSPORT",
+    "categoryDescription": "交通"
+  }
+]
+```
+
+---
+
+## Create category
+
+<Card>
+  <div>
+    **POST** `/api/categories`
+  </div>
+</Card>
+
+Creates a new category type.
+
+### Request body
+
+<ParamField body="id" type="string" required>
+  Unique identifier for the category (e.g., "SALARY", "FOOD")
+</ParamField>
+
+<ParamField body="categoryDescription" type="string" required>
+  Description of the category type
+</ParamField>
+
+### Example request
+
+<CodeGroup>
+```bash curl
+curl -X POST http://localhost:8080/api/categories \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "SALARY",
+    "categoryDescription": "薪資收入"
+  }'
+```
+
+```javascript JavaScript
+fetch('http://localhost:8080/api/categories', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    id: 'SALARY',
+    categoryDescription: '薪資收入'
+  })
+});
+```
+
+```python Python
+import requests
+
+data = {
+    'id': 'SALARY',
+    'categoryDescription': '薪資收入'
+}
+
+response = requests.post(
+    'http://localhost:8080/api/categories',
+    json=data
+)
+```
+</CodeGroup>
+
+### Response
+
+Returns HTTP 200 on success, or HTTP 409 if a category with the same ID already exists.
+
+<Warning>
+  Category IDs must be unique. If you attempt to create a category with an existing ID, you will receive a 409 Conflict response.
+</Warning>
+
+---
+
+## Update category
+
+<Card>
+  <div>
+    **PUT** `/api/categories`
+  </div>
+</Card>
+
+Updates an existing category type.
+
+<Note>
+  Unlike other resources, the update endpoint for categories does not include the ID in the path. Instead, the ID is provided in the request body.
+</Note>
+
+### Request body
+
+<ParamField body="id" type="string" required>
+  ID of the category to update
+</ParamField>
+
+<ParamField body="categoryDescription" type="string" required>
+  New description for the category
+</ParamField>
+
+### Example request
+
+<CodeGroup>
+```bash curl
+curl -X PUT http://localhost:8080/api/categories \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "SALARY",
+    "categoryDescription": "薪資收入 (Updated)"
+  }'
+```
+
+```javascript JavaScript
+fetch('http://localhost:8080/api/categories', {
+  method: 'PUT',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    id: 'SALARY',
+    categoryDescription: '薪資收入 (Updated)'
+  })
+});
+```
+
+```python Python
+import requests
+
+data = {
+    'id': 'SALARY',
+    'categoryDescription': '薪資收入 (Updated)'
+}
+
+response = requests.put(
+    'http://localhost:8080/api/categories',
+    json=data
+)
+```
+</CodeGroup>
+
+### Response
+
+Returns HTTP 200 on success, or HTTP 404 if the category is not found.
+
+---
+
+## Delete category
+
+<Card>
+  <div>
+    **DELETE** `/api/categories/{id}`
+  </div>
+</Card>
+
+Deletes a specific category type.
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  ID of the category to delete
+</ParamField>
+
+### Example request
+
+<CodeGroup>
+```bash curl
+curl -X DELETE http://localhost:8080/api/categories/SALARY
+```
+
+```javascript JavaScript
+fetch('http://localhost:8080/api/categories/SALARY', {
+  method: 'DELETE'
+});
+```
+
+```python Python
+import requests
+
+response = requests.delete('http://localhost:8080/api/categories/SALARY')
+```
+</CodeGroup>
+
+### Response
+
+Returns HTTP 200 on success, or HTTP 404 if the category is not found.
+
+<Warning>
+  Deleting a category that is referenced by existing account book entries may cause data integrity issues. Make sure to handle references appropriately before deletion.
+</Warning>
+
+---
+
+## Batch delete categories
+
+<Card>
+  <div>
+    **DELETE** `/api/categories/batch`
+  </div>
+</Card>
+
+Deletes multiple category types at once.
+
+### Request body
+
+<ParamField body="ids" type="array" required>
+  Array of category IDs to delete
+</ParamField>
+
+### Example request
+
+<CodeGroup>
+```bash curl
+curl -X DELETE http://localhost:8080/api/categories/batch \
+  -H "Content-Type: application/json" \
+  -d '["SALARY", "FOOD", "TRANSPORT"]'
+```
+
+```javascript JavaScript
+fetch('http://localhost:8080/api/categories/batch', {
+  method: 'DELETE',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(['SALARY', 'FOOD', 'TRANSPORT'])
+});
+```
+
+```python Python
+import requests
+
+ids = ['SALARY', 'FOOD', 'TRANSPORT']
+response = requests.delete(
+    'http://localhost:8080/api/categories/batch',
+    json=ids
+)
+```
+</CodeGroup>
+
+### Response
+
+Returns HTTP 200 on success.
+
+---
+
+## Common use cases
+
+<AccordionGroup>
+  <Accordion title="Setting up default categories">
+    Here are some common categories you might want to set up for a personal accounting system:
+
+    ```bash
+    # Income categories
+    curl -X POST http://localhost:8080/api/categories \
+      -H "Content-Type: application/json" \
+      -d '{"id": "SALARY", "categoryDescription": "薪資收入"}'
+
+    curl -X POST http://localhost:8080/api/categories \
+      -H "Content-Type: application/json" \
+      -d '{"id": "BONUS", "categoryDescription": "獎金"}'
+
+    # Expense categories
+    curl -X POST http://localhost:8080/api/categories \
+      -H "Content-Type: application/json" \
+      -d '{"id": "FOOD", "categoryDescription": "飲食"}'
+
+    curl -X POST http://localhost:8080/api/categories \
+      -H "Content-Type: application/json" \
+      -d '{"id": "TRANSPORT", "categoryDescription": "交通"}'
+
+    curl -X POST http://localhost:8080/api/categories \
+      -H "Content-Type: application/json" \
+      -d '{"id": "ENTERTAINMENT", "categoryDescription": "娛樂"}'
+    ```
+  </Accordion>
+
+  <Accordion title="Building a category filter for reports">
+    When generating reports, you might want to filter transactions by category:
+
+    ```javascript
+    async function getTransactionsByCategory(categoryId) {
+      // Get all account books
+      const response = await fetch('http://localhost:8080/api/account-books');
+      const allBooks = await response.json();
+      
+      // Filter by category
+      const filtered = allBooks.filter(book => book.category === categoryId);
+      
+      // Calculate total
+      const total = filtered.reduce((sum, book) => sum + book.amount, 0);
+      
+      return { transactions: filtered, total };
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Organizing categories by income vs. expense">
+    You can organize your categories based on whether they're typically used for income or expenses:
+
+    ```javascript
+    const incomeCategories = ['SALARY', 'BONUS', 'INVESTMENT'];
+    const expenseCategories = ['FOOD', 'TRANSPORT', 'ENTERTAINMENT', 'BILLS'];
+
+    // Get all categories
+    const response = await fetch('http://localhost:8080/api/categories');
+    const categories = await response.json();
+
+    // Organize into income and expense groups
+    const organized = {
+      income: categories.filter(cat => incomeCategories.includes(cat.id)),
+      expense: categories.filter(cat => expenseCategories.includes(cat.id))
+    };
+    ```
+  </Accordion>
+</AccordionGroup>

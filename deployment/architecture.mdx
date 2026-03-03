@@ -1,0 +1,241 @@
+---
+title: System architecture
+description: Understand the EasyACT system architecture and component interactions
+---
+
+## Overview
+
+EasyACT is built using a modern, containerized architecture with clear separation between the frontend, backend, and database layers. The system uses Docker Compose to orchestrate three main services that communicate over a private network.
+
+## Architecture diagram
+
+```
+┌─────────────┐      ┌─────────────┐      ┌─────────────┐
+│             │      │             │      │             │
+│   Web UI    │─────▶│   API       │─────▶│  Database   │
+│  (Vue.js)   │      │ (Spring     │      │ (PostgreSQL)│
+│   Nginx     │      │  Boot)      │      │             │
+│             │      │             │      │             │
+└─────────────┘      └─────────────┘      └─────────────┘
+   Port: 8000           Port: 8080          Port: 5432
+```
+
+## Components
+
+### Web UI layer
+
+The frontend layer serves the user interface and handles all client-side interactions.
+
+**Technology stack**:
+- **Vue.js 3.5.25**: Core frontend framework
+- **Vue Router 4.6.3**: Client-side routing
+- **Pinia 3.0.4**: State management
+- **PrimeVue 4.5.3**: UI component library
+- **Tailwind CSS 4.1.18**: Utility-first CSS framework
+- **Chart.js 4.5.1**: Data visualization
+- **Axios 1.13.2**: HTTP client for API requests
+- **Vite 7.2.4**: Build tool and development server
+- **Nginx stable-alpine**: Production web server
+
+**Responsibilities**:
+- Serve static assets (HTML, CSS, JavaScript)
+- Handle client-side routing with Vue Router history mode
+- Manage application state with Pinia
+- Render data visualizations using Chart.js
+- Communicate with the API server via HTTP requests
+
+**Container details**:
+- **Name**: `easy_act-web`
+- **Base image**: `nginx:stable-alpine`
+- **Exposed port**: `8000` (maps to internal port `80`)
+- **Build process**: Two-stage build
+  1. Build Vue.js application with Node.js
+  2. Serve static files with Nginx
+
+### API layer
+
+The backend layer provides RESTful APIs and implements business logic.
+
+**Technology stack**:
+- **Spring Boot 4.0.1**: Core backend framework
+- **Java 25**: Programming language
+- **Spring Data JPA**: ORM and database access
+- **Spring Web MVC**: Web framework
+- **PostgreSQL Driver**: Database connectivity
+- **Lombok**: Java code simplification
+- **SpringDoc OpenAPI 2.6.0**: API documentation generation
+- **Maven**: Build and dependency management
+
+**Responsibilities**:
+- Handle HTTP requests from the web layer
+- Implement business logic for financial tracking
+- Manage data persistence with JPA/Hibernate
+- Provide RESTful API endpoints
+- Generate API documentation with Swagger/OpenAPI
+- Validate and transform data between layers
+
+**Container details**:
+- **Name**: `easy_act-api`
+- **Base image**: `openjdk:25-rc-jdk-bookworm`
+- **Exposed port**: `8080`
+- **Build process**: Two-stage build
+  1. Compile Java application with Maven
+  2. Run JAR file with OpenJDK
+
+### Database layer
+
+The persistence layer stores all application data.
+
+**Technology**:
+- **PostgreSQL 15**: Relational database management system
+
+**Responsibilities**:
+- Store user accounts, transactions, and categories
+- Maintain data integrity with constraints
+- Provide transactional support
+- Enable efficient data queries
+
+**Container details**:
+- **Name**: `easy_act-db`
+- **Image**: `postgres:15`
+- **Internal port**: `5432` (not exposed to host)
+- **Data volume**: `./data` directory on host
+- **Database name**: `easy_act`
+
+## Communication flow
+
+### User request flow
+
+<Steps>
+  <Step title="User interaction">
+    User interacts with the Vue.js application in their browser
+  </Step>
+
+  <Step title="Client-side routing">
+    Vue Router handles navigation and renders appropriate components
+  </Step>
+
+  <Step title="API request">
+    Components use Axios to send HTTP requests to the API server at `http://api:8080` (internal) or `http://localhost:8080` (external)
+  </Step>
+
+  <Step title="Business logic">
+    Spring Boot controllers receive requests, validate input, and delegate to service layer
+  </Step>
+
+  <Step title="Data access">
+    Service layer uses JPA repositories to query/update the PostgreSQL database
+  </Step>
+
+  <Step title="Response">
+    Data flows back through the layers: Database → Service → Controller → HTTP Response
+  </Step>
+
+  <Step title="UI update">
+    Vue.js components receive data and update the UI reactively
+  </Step>
+</Steps>
+
+## Network architecture
+
+### Bridge network
+
+All containers are connected through a Docker bridge network named `app-network`:
+
+- **Driver**: `bridge`
+- **Purpose**: Enables service-to-service communication
+- **DNS**: Automatic service discovery by container name
+
+### Service communication
+
+**Internal communication** (container-to-container):
+- Web → API: Not applicable (client-side requests)
+- API → Database: `jdbc:postgresql://db:5432/easy_act`
+
+**External access** (host-to-container):
+- Host → Web: `http://localhost:8000`
+- Host → API: `http://localhost:8080`
+- Host → Database: Not exposed (security best practice)
+
+<Note>
+  The database is intentionally not exposed to the host machine, preventing direct external access and improving security.
+</Note>
+
+## Build process
+
+### Web container build
+
+```dockerfile
+# Stage 1: Build Vue.js application
+FROM node:lts-alpine AS build-stage
+WORKDIR /app
+COPY package*.json ./
+RUN yarn install
+COPY . .
+RUN yarn build
+
+# Stage 2: Serve with Nginx
+FROM nginx:stable-alpine AS production-stage
+COPY --from=build-stage /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+### API container build
+
+```dockerfile
+# Stage 1: Build Spring Boot application
+FROM openjdk:25-rc-jdk-bookworm AS build-stage
+WORKDIR /app
+COPY . .
+RUN ./mvnw clean package
+
+# Stage 2: Run application
+FROM openjdk:25-rc-jdk-bookworm AS production-stage
+WORKDIR /app
+COPY --from=build-stage /app/target/api.jar api.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "api.jar"]
+```
+
+<Note>
+  Both containers use multi-stage builds to reduce final image size by separating build dependencies from runtime dependencies.
+</Note>
+
+## Data persistence
+
+The PostgreSQL database uses a bind mount to persist data:
+
+```yaml
+volumes:
+  - ./data:/var/lib/postgresql/data
+```
+
+This ensures that data survives container restarts and removals. The `./data` directory on the host machine contains all database files.
+
+## Restart policies
+
+All services are configured with `restart: always`, ensuring:
+
+- Automatic recovery from crashes
+- Services start automatically on system boot
+- High availability for the application
+
+## Scaling considerations
+
+The current architecture is designed for single-instance deployment. For scaling:
+
+**Horizontal scaling**:
+- Multiple web containers behind a load balancer
+- Multiple API instances with session management
+- Database replication for read scalability
+
+**Vertical scaling**:
+- Increase container resource limits
+- Optimize database queries and indexes
+- Add caching layer (Redis, Memcached)
+
+<Warning>
+  The default configuration does not include clustering or load balancing. These features require additional setup.
+</Warning>

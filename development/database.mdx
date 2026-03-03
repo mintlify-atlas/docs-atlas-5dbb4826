@@ -1,0 +1,460 @@
+---
+title: Database schema
+description: Database structure and entity models for EasyACT
+---
+
+EasyACT uses PostgreSQL 15 as its relational database, with Spring Data JPA for object-relational mapping.
+
+## Database overview
+
+### Technology
+
+| Component | Version | Description |
+| --- | --- | --- |
+| **PostgreSQL** | 15 | Primary database |
+| **Spring Data JPA** | - | ORM framework |
+| **Hibernate** | - | JPA implementation |
+
+### Connection settings
+
+```properties
+spring.datasource.url=jdbc:postgresql://localhost:5432/easyact
+spring.datasource.username=postgres
+spring.datasource.password=postgres
+spring.jpa.hibernate.ddl-auto=update
+```
+
+<Note>
+In Docker deployment, the database host is `db` instead of `localhost`.
+</Note>
+
+## Entity-relationship diagram
+
+```
+┌──────────────┐         ┌──────────────────┐         ┌──────────────┐
+│   actions    │         │  account_books   │         │ categories   │
+├──────────────┤         ├──────────────────┤         ├──────────────┤
+│ id (PK)      │◄───────┤│ id (PK)          │├───────►│ id (PK)      │
+│ action_desc  │   1:N  ││ date             ││  N:1   │ category_desc│
+└──────────────┘         ││ amount           ││         └──────────────┘
+                         ││ description      ││
+                         ││ action (FK)      ││
+                         ││ category (FK)    ││
+                         └──────────────────┘
+```
+
+## Table schemas
+
+### actions table
+
+Stores transaction types (income or expense).
+
+| Column | Type | Constraints | Description |
+| --- | --- | --- | --- |
+| `id` | VARCHAR | PRIMARY KEY | Action code (e.g., "IN", "OUT") |
+| `action_description` | VARCHAR | - | Human-readable name (e.g., "Income", "Expense") |
+
+**Example data:**
+
+| id | action_description |
+| --- | --- |
+| IN | Income |
+| OUT | Expense |
+
+### categories table
+
+Stores transaction categories.
+
+| Column | Type | Constraints | Description |
+| --- | --- | --- | --- |
+| `id` | VARCHAR | PRIMARY KEY | Category code |
+| `category_description` | VARCHAR | - | Category name |
+
+**Example data:**
+
+| id | category_description |
+| --- | --- |
+| FOOD | Food & Dining |
+| TRANSPORT | Transportation |
+| SALARY | Salary |
+| SHOPPING | Shopping |
+
+### account_books table
+
+Stores individual transactions.
+
+| Column | Type | Constraints | Description |
+| --- | --- | --- | --- |
+| `id` | BIGSERIAL | PRIMARY KEY | Auto-incrementing ID |
+| `date` | TIMESTAMP | NOT NULL | Transaction date and time |
+| `amount` | DOUBLE PRECISION | NOT NULL | Transaction amount |
+| `description` | VARCHAR | - | Transaction notes |
+| `action` | VARCHAR | FOREIGN KEY → actions(id) | Income or expense type |
+| `category` | VARCHAR | FOREIGN KEY → categories(id) | Transaction category |
+
+**Example data:**
+
+| id | date | amount | description | action | category |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 2026-03-01 10:30:00 | 50.00 | Lunch at restaurant | OUT | FOOD |
+| 2 | 2026-03-01 15:00:00 | 3000.00 | Monthly salary | IN | SALARY |
+| 3 | 2026-03-02 08:45:00 | 15.00 | Subway fare | OUT | TRANSPORT |
+
+## JPA entity models
+
+### Action entity
+
+```java
+package com.raylon.api.model;
+
+import java.util.List;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
+@Entity
+@Table(name = "actions")
+@Getter
+@Setter
+public class Action {
+    @Id
+    @Column(name = "id")
+    private String id; // Code (e.g., "IN", "OUT")
+
+    @Column(name = "action_description")
+    private String actionDescription; // Income/Expense
+
+    // Reverse relationship
+    @OneToMany(mappedBy = "action", fetch = FetchType.LAZY)
+    private List<AccountBook> accountBooks;
+}
+```
+
+### Category entity
+
+```java
+package com.raylon.api.model;
+
+import java.util.List;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
+@Entity
+@Table(name = "categories")
+@Getter
+@Setter
+public class Category {
+    @Id
+    @Column(name = "id")
+    private String id;
+
+    @Column(name = "category_description")
+    private String categoryDescription;
+
+    // Reverse relationship
+    @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
+    private List<AccountBook> accountBooks;
+}
+```
+
+### AccountBook entity
+
+```java
+package com.raylon.api.model;
+
+import java.time.LocalDateTime;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
+@Entity
+@Table(name = "account_books")
+@Getter
+@Setter
+public class AccountBook {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Long id;
+
+    @Column(name = "date")
+    private LocalDateTime date;
+
+    @Column(name = "amount")
+    private Double amount;
+
+    @Column(name = "description")
+    private String description;
+
+    // Many AccountBooks -> One Action
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "action")
+    private Action action;
+
+    // Many AccountBooks -> One Category
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "category")
+    private Category category;
+}
+```
+
+## Relationships
+
+### One-to-many relationships
+
+**Action → AccountBook**
+- One action type can have many transactions
+- Fetch type: LAZY (loaded on demand)
+- Bidirectional relationship
+
+**Category → AccountBook**
+- One category can have many transactions
+- Fetch type: LAZY (loaded on demand)
+- Bidirectional relationship
+
+### Many-to-one relationships
+
+**AccountBook → Action**
+- Many transactions belong to one action type
+- Fetch type: EAGER (always loaded)
+- Required for transaction creation
+
+**AccountBook → Category**
+- Many transactions belong to one category
+- Fetch type: EAGER (always loaded)
+- Required for transaction creation
+
+<Info>
+EAGER fetching on `AccountBook` relationships ensures action and category data is always available when querying transactions.
+</Info>
+
+## Repository interfaces
+
+### AccountBookRepository
+
+```java
+package com.raylon.api.repository;
+
+import com.raylon.api.model.AccountBook;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface AccountBookRepository extends JpaRepository<AccountBook, Long> {
+    // Inherits methods:
+    // - List<AccountBook> findAll()
+    // - Optional<AccountBook> findById(Long id)
+    // - AccountBook save(AccountBook entity)
+    // - void deleteById(Long id)
+    // - boolean existsById(Long id)
+}
+```
+
+### ActionRepository
+
+```java
+package com.raylon.api.repository;
+
+import com.raylon.api.model.Action;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ActionRepository extends JpaRepository<Action, String> {
+    // String ID type for action codes ("IN", "OUT")
+}
+```
+
+### CategoryRepository
+
+```java
+package com.raylon.api.repository;
+
+import com.raylon.api.model.Category;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface CategoryRepository extends JpaRepository<Category, String> {
+    // String ID type for category codes
+}
+```
+
+## Database initialization
+
+### Automatic schema generation
+
+Hibernate automatically creates/updates tables based on entity definitions:
+
+```properties
+spring.jpa.hibernate.ddl-auto=update
+```
+
+<Tabs>
+  <Tab title="Development">
+    ```properties
+    # Update schema without dropping existing data
+    spring.jpa.hibernate.ddl-auto=update
+    spring.jpa.show-sql=true
+    ```
+  </Tab>
+  <Tab title="Production">
+    ```properties
+    # Validate schema without changes
+    spring.jpa.hibernate.ddl-auto=validate
+    spring.jpa.show-sql=false
+    ```
+  </Tab>
+</Tabs>
+
+### Initial data seeding
+
+Create a data initialization script for default actions and categories:
+
+```java
+@Component
+public class DataInitializer implements CommandLineRunner {
+    private final ActionRepository actionRepository;
+    private final CategoryRepository categoryRepository;
+
+    @Override
+    public void run(String... args) {
+        // Initialize actions
+        if (actionRepository.count() == 0) {
+            Action income = new Action();
+            income.setId("IN");
+            income.setActionDescription("Income");
+            actionRepository.save(income);
+
+            Action expense = new Action();
+            expense.setId("OUT");
+            expense.setActionDescription("Expense");
+            actionRepository.save(expense);
+        }
+
+        // Initialize categories
+        if (categoryRepository.count() == 0) {
+            createCategory("FOOD", "Food & Dining");
+            createCategory("TRANSPORT", "Transportation");
+            createCategory("SALARY", "Salary");
+            createCategory("SHOPPING", "Shopping");
+        }
+    }
+
+    private void createCategory(String id, String description) {
+        Category category = new Category();
+        category.setId(id);
+        category.setCategoryDescription(description);
+        categoryRepository.save(category);
+    }
+}
+```
+
+## Query examples
+
+### Basic queries
+
+```java
+// Get all transactions
+List<AccountBook> all = accountBookRepository.findAll();
+
+// Get transaction by ID
+Optional<AccountBook> account = accountBookRepository.findById(1L);
+
+// Save new transaction
+AccountBook newAccount = new AccountBook();
+newAccount.setDate(LocalDateTime.now());
+newAccount.setAmount(100.0);
+accountBookRepository.save(newAccount);
+
+// Delete transaction
+accountBookRepository.deleteById(1L);
+```
+
+### Custom queries
+
+Add custom query methods to repositories:
+
+```java
+public interface AccountBookRepository extends JpaRepository<AccountBook, Long> {
+    // Find by date range
+    List<AccountBook> findByDateBetween(LocalDateTime start, LocalDateTime end);
+    
+    // Find by action type
+    List<AccountBook> findByAction(Action action);
+    
+    // Find by category
+    List<AccountBook> findByCategory(Category category);
+    
+    // Find by action and date range
+    @Query("SELECT a FROM AccountBook a WHERE a.action.id = :actionId " +
+           "AND a.date BETWEEN :start AND :end")
+    List<AccountBook> findByActionAndDateRange(
+        @Param("actionId") String actionId,
+        @Param("start") LocalDateTime start,
+        @Param("end") LocalDateTime end
+    );
+}
+```
+
+## Data persistence
+
+### Docker volume
+
+In Docker deployment, PostgreSQL data is persisted using a volume:
+
+```yaml
+# docker-compose.yml
+services:
+  db:
+    image: postgres:15
+    volumes:
+      - ./data:/var/lib/postgresql/data
+```
+
+<Note>
+The `./data` directory contains all database files and persists across container restarts.
+</Note>
+
+### Backup and restore
+
+<CodeGroup>
+```bash Backup
+# Create database backup
+docker exec easyact-db pg_dump -U postgres easyact > backup.sql
+```
+
+```bash Restore
+# Restore from backup
+docker exec -i easyact-db psql -U postgres easyact < backup.sql
+```
+</CodeGroup>
+
+## Performance considerations
+
+### Indexing
+
+Add indexes for frequently queried columns:
+
+```java
+@Entity
+@Table(name = "account_books", indexes = {
+    @Index(name = "idx_date", columnList = "date"),
+    @Index(name = "idx_action", columnList = "action"),
+    @Index(name = "idx_category", columnList = "category")
+})
+public class AccountBook {
+    // ...
+}
+```
+
+### Fetch strategies
+
+- Use **LAZY** fetching for collections to avoid N+1 queries
+- Use **EAGER** fetching for required relationships like action and category
+- Consider using `@EntityGraph` for complex queries
+
+### Connection pooling
+
+Configure HikariCP for optimal connection management:
+
+```properties
+spring.datasource.hikari.maximum-pool-size=10
+spring.datasource.hikari.minimum-idle=5
+spring.datasource.hikari.connection-timeout=30000
+```

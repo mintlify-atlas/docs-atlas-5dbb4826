@@ -1,0 +1,375 @@
+---
+title: Configuration options
+description: Configure EasyACT services using environment variables and configuration files
+---
+
+## Overview
+
+EasyACT services can be configured through environment variables defined in `docker-compose.yml` and application-specific configuration files. This page documents all available configuration options.
+
+## Docker Compose configuration
+
+The `docker-compose.yml` file defines environment variables for each service.
+
+### Database service configuration
+
+PostgreSQL database configuration options:
+
+| Environment Variable | Default Value | Description |
+| -------------------- | ------------- | ----------- |
+| `POSTGRES_USER` | `postgres` | PostgreSQL superuser username |
+| `POSTGRES_PASSWORD` | `postgres_password` | PostgreSQL superuser password |
+| `POSTGRES_DB` | `easy_act` | Default database name |
+
+**Example configuration**:
+
+```yaml docker-compose.yml
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password
+      POSTGRES_DB: easy_act
+    volumes:
+      - ./data:/var/lib/postgresql/data
+```
+
+<Warning>
+  For production deployments, change the default password to a strong, unique value. Never commit credentials to version control.
+</Warning>
+
+### API service configuration
+
+Spring Boot API configuration options:
+
+| Environment Variable | Default Value | Description |
+| -------------------- | ------------- | ----------- |
+| `SPRING_DATASOURCE_URL` | `jdbc:postgresql://db:5432/easy_act` | JDBC connection URL for PostgreSQL |
+| `SPRING_DATASOURCE_USERNAME` | `postgres` | Database username |
+| `SPRING_DATASOURCE_PASSWORD` | `postgres_password` | Database password |
+
+**Example configuration**:
+
+```yaml docker-compose.yml
+services:
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/easy_act
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres_password
+```
+
+<Note>
+  The database hostname `db` in the JDBC URL refers to the database service name in Docker Compose, enabling automatic service discovery.
+</Note>
+
+### Web service configuration
+
+The web service does not require environment variables in the default configuration. Nginx serves static files built during the Docker image creation.
+
+## Application properties
+
+The API service uses Spring Boot's `application.properties` file located at:
+
+```
+api/src/main/resources/application.properties
+```
+
+### Database configuration
+
+Configure database connection settings:
+
+```properties
+# PostgreSQL DataSource settings
+spring.datasource.url=jdbc:postgresql://db:5432/easy_act
+spring.datasource.username=postgres
+spring.datasource.password=postgres_password
+spring.datasource.driver-class-name=org.postgresql.Driver
+```
+
+| Property | Value | Description |
+| -------- | ----- | ----------- |
+| `spring.datasource.url` | `jdbc:postgresql://db:5432/easy_act` | Database connection URL |
+| `spring.datasource.username` | `postgres` | Database username |
+| `spring.datasource.password` | `postgres_password` | Database password |
+| `spring.datasource.driver-class-name` | `org.postgresql.Driver` | JDBC driver class |
+
+<Note>
+  Environment variables in `docker-compose.yml` override these properties when the container runs.
+</Note>
+
+### JPA and Hibernate configuration
+
+Configure JPA/Hibernate behavior:
+
+```properties
+# JPA settings
+spring.jpa.hibernate.ddl-auto=none
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+```
+
+| Property | Value | Description |
+| -------- | ----- | ----------- |
+| `spring.jpa.hibernate.ddl-auto` | `none` | Schema generation strategy (none/create/update/validate) |
+| `spring.jpa.show-sql` | `true` | Log SQL statements to console |
+| `spring.jpa.properties.hibernate.dialect` | `org.hibernate.dialect.PostgreSQLDialect` | Hibernate dialect for PostgreSQL |
+
+**DDL Auto options**:
+- `none`: No schema management (production recommended)
+- `validate`: Validate schema matches entities
+- `update`: Update schema automatically
+- `create`: Drop and recreate schema on startup
+- `create-drop`: Create schema on startup, drop on shutdown
+
+<Warning>
+  Using `create` or `create-drop` in production will result in data loss. Always use `none` or `validate` for production environments.
+</Warning>
+
+### Server configuration
+
+Configure the embedded Tomcat server:
+
+```properties
+# Server settings
+server.port=8080
+```
+
+| Property | Value | Description |
+| -------- | ----- | ----------- |
+| `server.port` | `8080` | HTTP port for the API server |
+
+## Nginx configuration
+
+The web service uses a custom Nginx configuration file at:
+
+```
+web/nginx.conf
+```
+
+**Configuration details**:
+
+```nginx
+server {
+    listen       80;
+    server_name  localhost;
+
+    location / {
+        root   /usr/share/nginx/html;
+        index  index.html index.htm;
+        # Support Vue Router History Mode
+        try_files $uri $uri/ /index.html;
+    }
+
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+        root   /usr/share/nginx/html;
+    }
+}
+```
+
+**Key features**:
+- **Port**: Listens on port `80` inside the container
+- **Vue Router support**: `try_files` directive enables HTML5 History mode
+- **Error handling**: Custom error pages for 5xx errors
+
+## Port configuration
+
+Customize exposed ports by modifying `docker-compose.yml`:
+
+<CodeGroup>
+```yaml Web service
+services:
+  web:
+    ports:
+      - "8000:80"  # HOST_PORT:CONTAINER_PORT
+```
+
+```yaml API service
+services:
+  api:
+    ports:
+      - "8080:8080"  # HOST_PORT:CONTAINER_PORT
+```
+</CodeGroup>
+
+<Note>
+  Only change the host port (left side) to avoid conflicts. Keep the container port (right side) unchanged unless you also modify application configuration.
+</Note>
+
+## Volume configuration
+
+The database service uses a volume for data persistence:
+
+```yaml docker-compose.yml
+services:
+  db:
+    volumes:
+      - ./data:/var/lib/postgresql/data
+```
+
+**Options**:
+
+- **Bind mount** (default): `./data:/var/lib/postgresql/data`
+  - Data stored in host directory
+  - Easy to backup and access
+  
+- **Named volume**: `postgres-data:/var/lib/postgresql/data`
+  - Managed by Docker
+  - Better performance on Windows/Mac
+
+**Using named volumes**:
+
+```yaml docker-compose.yml
+services:
+  db:
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+volumes:
+  postgres-data:
+```
+
+## Network configuration
+
+The default bridge network configuration:
+
+```yaml docker-compose.yml
+networks:
+  app-network:
+    driver: bridge
+```
+
+**Advanced options**:
+
+```yaml docker-compose.yml
+networks:
+  app-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+          gateway: 172.28.0.1
+```
+
+## Environment-specific configuration
+
+For different environments (development, staging, production), create environment-specific files:
+
+<Steps>
+  <Step title="Create environment files">
+    Create `.env` files for each environment:
+
+    ```bash
+    .env.development
+    .env.staging
+    .env.production
+    ```
+  </Step>
+
+  <Step title="Define variables">
+    Add environment-specific variables:
+
+    ```bash .env.production
+    POSTGRES_PASSWORD=strong_production_password
+    POSTGRES_USER=easyact_user
+    SPRING_DATASOURCE_PASSWORD=strong_production_password
+    SPRING_DATASOURCE_USERNAME=easyact_user
+    ```
+  </Step>
+
+  <Step title="Reference in docker-compose.yml">
+    Use variables in your configuration:
+
+    ```yaml docker-compose.yml
+    services:
+      db:
+        environment:
+          POSTGRES_USER: ${POSTGRES_USER}
+          POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      api:
+        environment:
+          SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+          SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+    ```
+  </Step>
+
+  <Step title="Deploy with specific environment">
+    Specify the environment file when deploying:
+
+    ```bash
+    docker-compose --env-file .env.production up -d
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+  Never commit `.env` files containing sensitive credentials to version control. Add them to `.gitignore`.
+</Warning>
+
+## Logging configuration
+
+View and configure container logs:
+
+### View logs
+
+```bash
+# All services
+docker-compose logs -f
+
+# Specific service
+docker-compose logs -f api
+
+# Last 100 lines
+docker-compose logs --tail=100 api
+```
+
+### Configure log levels
+
+Add to `application.properties`:
+
+```properties
+# Logging levels
+logging.level.root=INFO
+logging.level.com.raylon.api=DEBUG
+logging.level.org.springframework.web=DEBUG
+logging.level.org.hibernate.SQL=DEBUG
+```
+
+## Health checks
+
+Add health checks to monitor service availability:
+
+```yaml docker-compose.yml
+services:
+  api:
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+```
+
+<Note>
+  Health checks require Spring Boot Actuator to be enabled in the API application.
+</Note>
+
+## Production checklist
+
+Before deploying to production:
+
+- [ ] Change default database credentials
+- [ ] Set `spring.jpa.hibernate.ddl-auto=none`
+- [ ] Disable SQL logging (`spring.jpa.show-sql=false`)
+- [ ] Configure proper logging levels
+- [ ] Set up SSL/TLS certificates for HTTPS
+- [ ] Configure firewall rules
+- [ ] Set up automated backups for the `./data` directory
+- [ ] Enable health checks
+- [ ] Configure resource limits (CPU, memory)
+- [ ] Set up monitoring and alerting

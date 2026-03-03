@@ -1,0 +1,390 @@
+---
+title: Frontend development
+description: Frontend technology stack and development guide for EasyACT
+---
+
+The EasyACT frontend is built with Vue.js 3 and modern web technologies, providing a responsive and intuitive user interface for personal finance management.
+
+## Technology stack
+
+### Core framework
+
+| Technology | Version | Purpose |
+| --- | --- | --- |
+| **Vue.js** | 3.5.25 | Progressive JavaScript framework |
+| **Vite** | 7.2.4 | Build tool and dev server |
+| **Node.js** | ^20.19.0 or >=22.12.0 | Runtime environment |
+
+### State management and routing
+
+| Technology | Version | Purpose |
+| --- | --- | --- |
+| **Vue Router** | 4.6.3 | Client-side routing |
+| **Pinia** | 3.0.4 | State management |
+| **VueUse** | 14.1.0 | Composition utilities |
+
+### UI and styling
+
+| Technology | Version | Purpose |
+| --- | --- | --- |
+| **PrimeVue** | 4.5.3 | UI component library |
+| **Tailwind CSS** | 4.1.18 | Utility-first CSS framework |
+| **PrimeIcons** | 7.0.0 | Icon library |
+| **GSAP** | 3.14.2 | Animation library |
+
+### Data visualization
+
+| Technology | Version | Purpose |
+| --- | --- | --- |
+| **Chart.js** | 4.5.1 | Chart rendering |
+| **chartjs-plugin-datalabels** | 2.2.0 | Chart data labels |
+
+### HTTP client
+
+| Technology | Version | Purpose |
+| --- | --- | --- |
+| **Axios** | 1.13.2 | Promise-based HTTP client |
+
+## Project setup
+
+### Install dependencies
+
+```bash
+cd web
+npm install
+```
+
+### Development server
+
+Start the development server with hot module replacement:
+
+```bash
+npm run dev
+```
+
+The application will be available at `http://localhost:5173`.
+
+### Build for production
+
+```bash
+npm run build
+```
+
+Optimized files will be generated in the `dist/` directory.
+
+### Preview production build
+
+```bash
+npm run preview
+```
+
+### Code quality
+
+<Tabs>
+  <Tab title="Linting">
+    ```bash
+    npm run lint
+    ```
+    
+    Runs ESLint with auto-fix enabled.
+  </Tab>
+  <Tab title="Formatting">
+    ```bash
+    npm run format
+    ```
+    
+    Formats code using Prettier.
+  </Tab>
+</Tabs>
+
+## Application initialization
+
+The main entry point is `src/main.js`:
+
+```javascript
+import './assets/main.css'
+import { createApp } from 'vue'
+import { createPinia } from 'pinia'
+import { themeConfig } from './theme'
+import PrimeVue from 'primevue/config'
+import ToastService from 'primevue/toastservice'
+import ConfirmationService from 'primevue/confirmationservice'
+import Tooltip from 'primevue/tooltip'
+import App from './App.vue'
+import router from './router'
+
+const app = createApp(App)
+
+app.use(createPinia())
+app.use(PrimeVue, themeConfig)
+app.use(ToastService)
+app.use(ConfirmationService)
+app.directive('tooltip', Tooltip)
+app.use(router)
+
+app.mount('#app')
+```
+
+## State management
+
+### Account store
+
+EasyACT uses Pinia for centralized state management. The main store is `accountStore.js`:
+
+```javascript
+// stores/accountStore.js
+import { defineStore } from 'pinia'
+
+export const useAccountStore = defineStore('account', {
+  state: () => ({
+    accounts: [],
+    categories: [],
+    actions: []
+  }),
+  
+  getters: {
+    totalIncome: (state) => {
+      // Calculate total income
+    },
+    totalExpense: (state) => {
+      // Calculate total expense
+    }
+  },
+  
+  actions: {
+    async fetchAccounts() {
+      // Fetch accounts from API
+    },
+    async addAccount(accountData) {
+      // Add new account
+    }
+  }
+})
+```
+
+<Note>
+The store handles all API communication and provides reactive data to components.
+</Note>
+
+## Routing configuration
+
+The application uses Vue Router with hash-based history:
+
+```javascript
+import { createRouter, createWebHashHistory } from 'vue-router'
+import ChartView from '@/views/ChartView.vue'
+
+const router = createRouter({
+  history: createWebHashHistory(import.meta.env.BASE_URL),
+  routes: [
+    {
+      path: '/',
+      name: 'chart',
+      component: ChartView
+    },
+    {
+      path: '/list',
+      name: 'list',
+      component: () => import('@/views/ListView.vue')
+    },
+    {
+      path: '/add',
+      name: 'add',
+      component: () => import('@/views/AddView.vue')
+    }
+  ]
+})
+
+export default router
+```
+
+<Info>
+Hash-based routing (`createWebHashHistory`) is used for better compatibility when serving the app as a single HTML file.
+</Info>
+
+## Component structure
+
+### Layout components
+
+Base layout structure in `layout/`:
+
+- `BasePage.vue` - Main page wrapper
+- `Header.vue` - Application header with navigation
+- `Footer.vue` - Application footer
+
+### Feature components
+
+**Chart view components** (`components/ChartView/`):
+- `Overview.vue` - Dashboard overview with summary statistics
+- `CategoryChart.vue` - Pie/doughnut chart for category breakdown
+- `LinerChart.vue` - Line chart for income/expense trends
+- `AccountCard.vue` - Summary card displaying totals
+- `NumberDisplayer.vue` - Animated number display
+- `RecentAccounts.vue` - List of recent transactions
+- `NoRecord.vue` - Empty state when no data exists
+
+**List view components** (`components/ListView/`):
+- `EditDialog.vue` - Modal dialog for editing transactions
+
+### Page views
+
+- `ChartView.vue` - Dashboard page with charts and analytics
+- `ListView.vue` - Transaction list with filtering and editing
+- `AddView.vue` - Form for adding new transactions
+
+## Vite configuration
+
+The project uses custom Vite configuration:
+
+```javascript
+import { fileURLToPath, URL } from 'node:url'
+import { defineConfig } from 'vite'
+import { viteSingleFile } from 'vite-plugin-singlefile'
+import vue from '@vitejs/plugin-vue'
+import vueDevTools from 'vite-plugin-vue-devtools'
+import tailwindcss from '@tailwindcss/vite'
+
+export default defineConfig({
+  plugins: [
+    vue(),
+    vueDevTools(),
+    tailwindcss(),
+    viteSingleFile()
+  ],
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url))
+    }
+  },
+  base: './',
+  build: {
+    minify: false // Readable code for debugging
+  }
+})
+```
+
+### Key features
+
+- **Path alias**: `@` maps to `src/` directory
+- **Relative base**: Allows opening HTML directly in browser
+- **Single file build**: Bundles everything into one HTML file
+- **Unminified output**: Easier debugging of production builds
+- **Vue DevTools**: Development debugging tools
+
+## API integration
+
+API calls are made using Axios with a configured base URL:
+
+```javascript
+import axios from 'axios'
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',
+  headers: {
+    'Content-Type': 'application/json'
+  }
+})
+
+// Example: Fetch all account books
+export const getAccountBooks = () => api.get('/account-books')
+
+// Example: Create new account book
+export const createAccountBook = (data) => api.post('/account-books', data)
+```
+
+## Styling approach
+
+### Tailwind CSS
+
+Utility-first approach for rapid UI development:
+
+```vue
+<template>
+  <div class="flex items-center justify-between p-4 bg-white rounded-lg shadow">
+    <h2 class="text-xl font-semibold text-gray-800">Total Balance</h2>
+    <span class="text-2xl font-bold text-green-600">$1,234.56</span>
+  </div>
+</template>
+```
+
+### PrimeVue components
+
+Pre-built components with customizable themes:
+
+```vue
+<script setup>
+import Button from 'primevue/button'
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
+</script>
+
+<template>
+  <DataTable :value="accounts" :paginator="true" :rows="10">
+    <Column field="date" header="Date" sortable />
+    <Column field="amount" header="Amount" sortable />
+    <Column field="category" header="Category" />
+  </DataTable>
+  
+  <Button label="Add Transaction" icon="pi pi-plus" @click="openDialog" />
+</template>
+```
+
+## Best practices
+
+<Info>
+Follow Vue.js 3 Composition API patterns for better code organization and reusability.
+</Info>
+
+### Component composition
+
+Use composables for shared logic:
+
+```javascript
+// composables/useAccountData.js
+import { ref, computed } from 'vue'
+import { useAccountStore } from '@/stores/accountStore'
+
+export function useAccountData() {
+  const store = useAccountStore()
+  const loading = ref(false)
+  
+  const totalBalance = computed(() => {
+    return store.totalIncome - store.totalExpense
+  })
+  
+  const fetchData = async () => {
+    loading.value = true
+    await store.fetchAccounts()
+    loading.value = false
+  }
+  
+  return { totalBalance, loading, fetchData }
+}
+```
+
+### Error handling
+
+Implement proper error handling for API calls:
+
+```javascript
+import { useToast } from 'primevue/usetoast'
+
+const toast = useToast()
+
+try {
+  await createAccountBook(formData)
+  toast.add({
+    severity: 'success',
+    summary: 'Success',
+    detail: 'Transaction added successfully',
+    life: 3000
+  })
+} catch (error) {
+  toast.add({
+    severity: 'error',
+    summary: 'Error',
+    detail: error.message || 'Failed to add transaction',
+    life: 3000
+  })
+}
+```

@@ -1,0 +1,186 @@
+---
+title: Project structure
+description: Learn about EasyACT's project organization and directory layout
+---
+
+EasyACT follows a monorepo structure with separate frontend and backend applications. The project uses Docker Compose for containerized deployment.
+
+## Repository structure
+
+```
+EasyACT/
+├── api/                          # Backend API service
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/com/raylon/api/
+│   │   │   │   ├── config/      # Configuration classes (OpenAPI)
+│   │   │   │   ├── controller/  # REST controllers
+│   │   │   │   ├── dto/         # Data transfer objects
+│   │   │   │   ├── model/       # Entity models
+│   │   │   │   ├── repository/  # Data access layer
+│   │   │   │   └── service/     # Business logic layer
+│   │   │   └── resources/
+│   │   │       └── application.properties
+│   │   └── test/                # Test code
+│   ├── Dockerfile               # API container image
+│   └── pom.xml                  # Maven configuration
+│
+├── web/                          # Frontend application
+│   ├── src/
+│   │   ├── assets/              # Static resources (CSS)
+│   │   ├── components/          # Vue components
+│   │   │   ├── ChartView/       # Chart-related components
+│   │   │   └── ListView/        # List-related components
+│   │   ├── layout/              # Layout components
+│   │   ├── router/              # Route configuration
+│   │   ├── stores/              # Pinia state management
+│   │   ├── theme/               # Theme configuration
+│   │   ├── views/               # Page views
+│   │   ├── App.vue              # Root component
+│   │   └── main.js              # Application entry point
+│   ├── Dockerfile               # Web container image
+│   ├── nginx.conf               # Nginx configuration
+│   ├── package.json             # NPM configuration
+│   └── vite.config.js           # Vite configuration
+│
+├── docker-compose.yml            # Docker Compose configuration
+└── data/                         # PostgreSQL data persistence directory
+```
+
+## Architecture overview
+
+The system uses a three-tier architecture with frontend, backend API, and database layers:
+
+```
+┌─────────────┐      ┌─────────────┐      ┌─────────────┐
+│             │      │             │      │             │
+│   Web UI    │─────▶│   API       │─────▶│  Database   │
+│  (Vue.js)   │      │ (Spring     │      │ (PostgreSQL)│
+│   Nginx     │      │  Boot)      │      │             │
+│             │      │             │      │             │
+└─────────────┘      └─────────────┘      └─────────────┘
+   Port: 8000           Port: 8080          Port: 5432
+```
+
+## Frontend structure
+
+### Components organization
+
+Components are organized by feature:
+
+- **ChartView/** - Dashboard and analytics components
+  - `AccountCard.vue` - Account summary card
+  - `CategoryChart.vue` - Category breakdown chart
+  - `LinerChart.vue` - Trend line chart
+  - `NumberDisplayer.vue` - Numeric statistics display
+  - `Overview.vue` - Dashboard overview
+  - `RecentAccounts.vue` - Recent transaction list
+  - `NoRecord.vue` - Empty state component
+
+- **ListView/** - Transaction list components
+  - `EditDialog.vue` - Transaction edit dialog
+
+### Views
+
+The application has three main views:
+
+- `ChartView.vue` - Dashboard with charts and statistics
+- `ListView.vue` - Transaction list management
+- `AddView.vue` - Add new transaction form
+
+### Routing
+
+The router uses hash-based history mode for compatibility:
+
+```javascript
+import { createRouter, createWebHashHistory } from 'vue-router'
+
+const router = createRouter({
+  history: createWebHashHistory(import.meta.env.BASE_URL),
+  routes: [
+    { path: '/', name: 'chart', component: ChartView },
+    { path: '/list', name: 'list', component: () => import('@/views/ListView.vue') },
+    { path: '/add', name: 'add', component: () => import('@/views/AddView.vue') }
+  ]
+})
+```
+
+## Backend structure
+
+### Layered architecture
+
+The backend follows a standard Spring Boot layered architecture:
+
+**Controller layer** (`controller/`)
+- `AccountBookController.java` - Account book endpoints
+- `ActionController.java` - Action type endpoints
+- `CategoryController.java` - Category endpoints
+- `HealthController.java` - Health check endpoint
+
+**Service layer** (`service/`)
+- `AccountBookService.java` - Account book business logic
+- `ActionService.java` - Action type business logic
+- `CategoryService.java` - Category business logic
+
+**Repository layer** (`repository/`)
+- `AccountBookRepository.java` - Account book data access
+- `ActionRepository.java` - Action type data access
+- `CategoryRepository.java` - Category data access
+
+**Model layer** (`model/`)
+- `AccountBook.java` - Transaction entity
+- `Action.java` - Action type entity (income/expense)
+- `Category.java` - Category entity
+
+**DTO layer** (`dto/`)
+- Request and Response objects for API communication
+
+### Configuration
+
+- `OpenAPIConfig.java` - Swagger/OpenAPI documentation configuration
+- `application.properties` - Application settings (database, JPA, etc.)
+
+## Deployment structure
+
+### Docker Compose services
+
+The application runs as three Docker containers:
+
+1. **web** - Nginx serving the Vue.js frontend (port 8000)
+2. **api** - Spring Boot backend API (port 8080)
+3. **db** - PostgreSQL database (port 5432)
+
+All containers communicate via a bridge network.
+
+### Data persistence
+
+PostgreSQL data is persisted in the `./data` directory using Docker volumes.
+
+## Development workflow
+
+<Info>
+For local development without Docker, run the frontend and backend separately on their default ports.
+</Info>
+
+### Frontend development
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+The development server runs on `http://localhost:5173` with hot module replacement.
+
+### Backend development
+
+```bash
+cd api
+mvn spring-boot:run
+```
+
+The API runs on `http://localhost:8080` with automatic restart on code changes.
+
+### API documentation
+
+Swagger UI is available at `http://localhost:8080/swagger-ui.html` when the API is running.

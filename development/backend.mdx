@@ -1,0 +1,489 @@
+---
+title: Backend development
+description: Backend technology stack and development guide for EasyACT API
+---
+
+The EasyACT backend is built with Spring Boot, providing a robust REST API for managing personal finance transactions.
+
+## Technology stack
+
+### Core framework
+
+| Technology | Version | Purpose |
+| --- | --- | --- |
+| **Spring Boot** | 4.0.1 | Application framework |
+| **Java** | 25 | Programming language |
+| **Maven** | - | Build and dependency management |
+
+### Spring modules
+
+| Technology | Purpose |
+| --- | --- |
+| **Spring Data JPA** | Object-relational mapping |
+| **Spring Web MVC** | REST API framework |
+| **Spring Boot DevTools** | Development utilities |
+
+### Database
+
+| Technology | Purpose |
+| --- | --- |
+| **PostgreSQL** | Relational database (runtime) |
+| **Hibernate** | JPA implementation |
+
+### Additional libraries
+
+| Technology | Version | Purpose |
+| --- | --- | --- |
+| **Lombok** | - | Reduce boilerplate code |
+| **SpringDoc OpenAPI** | 2.6.0 | API documentation (Swagger) |
+
+## Project setup
+
+### Prerequisites
+
+- Java 25 or higher
+- Maven 3.6+
+- PostgreSQL 15
+
+### Build the project
+
+```bash
+cd api
+mvn clean install
+```
+
+### Run the application
+
+```bash
+mvn spring-boot:run
+```
+
+The API will start on `http://localhost:8080`.
+
+### Run tests
+
+```bash
+mvn test
+```
+
+## Project structure
+
+The backend follows a layered architecture pattern:
+
+```
+api/src/main/java/com/raylon/api/
+├── ApiApplication.java      # Main application class
+├── config/                  # Configuration classes
+│   └── OpenAPIConfig.java
+├── controller/              # REST endpoints
+│   ├── AccountBookController.java
+│   ├── ActionController.java
+│   ├── CategoryController.java
+│   └── HealthController.java
+├── dto/                     # Data transfer objects
+│   ├── AccountBookRequest.java
+│   ├── AccountBookResponse.java
+│   ├── ActionRequest.java
+│   ├── ActionResponse.java
+│   ├── CategoryRequest.java
+│   └── CategoryResponse.java
+├── model/                   # JPA entities
+│   ├── AccountBook.java
+│   ├── Action.java
+│   └── Category.java
+├── repository/              # Data access layer
+│   ├── AccountBookRepository.java
+│   ├── ActionRepository.java
+│   └── CategoryRepository.java
+└── service/                 # Business logic
+    ├── AccountBookService.java
+    ├── ActionService.java
+    └── CategoryService.java
+```
+
+## Layered architecture
+
+### Controller layer
+
+Controllers handle HTTP requests and define REST endpoints:
+
+```java
+@RestController
+@RequestMapping("/api/account-books")
+@CrossOrigin
+public class AccountBookController {
+    private final AccountBookService accountBookService;
+
+    public AccountBookController(AccountBookService accountBookService) {
+        this.accountBookService = accountBookService;
+    }
+
+    @Operation(summary = "Get all account books")
+    @GetMapping
+    public List<AccountBookResponse> getAllAccountBooks() {
+        return accountBookService.getAllAccountBooks();
+    }
+
+    @Operation(summary = "Create account book")
+    @PostMapping
+    public void createAccountBook(@RequestBody AccountBookRequest request) {
+        accountBookService.createAccountBook(request);
+    }
+
+    @Operation(summary = "Update account book")
+    @PutMapping("/{id}")
+    public void updateAccountBook(
+        @PathVariable Long id,
+        @RequestBody AccountBookRequest request
+    ) {
+        accountBookService.updateAccountBook(id, request);
+    }
+
+    @Operation(summary = "Delete account book")
+    @DeleteMapping("/{id}")
+    public void deleteAccountBook(@PathVariable Long id) {
+        accountBookService.deleteAccountBook(id);
+    }
+}
+```
+
+<Note>
+All controllers use `@CrossOrigin` to enable CORS for frontend communication.
+</Note>
+
+### Service layer
+
+Services contain business logic and coordinate between controllers and repositories:
+
+```java
+@Service
+public class AccountBookService {
+    private final AccountBookRepository accountBookRepository;
+    private final ActionRepository actionRepository;
+    private final CategoryRepository categoryRepository;
+
+    public AccountBookService(
+        AccountBookRepository accountBookRepository,
+        ActionRepository actionRepository,
+        CategoryRepository categoryRepository
+    ) {
+        this.accountBookRepository = accountBookRepository;
+        this.actionRepository = actionRepository;
+        this.categoryRepository = categoryRepository;
+    }
+
+    public List<AccountBookResponse> getAllAccountBooks() {
+        return accountBookRepository.findAll().stream()
+            .map(this::convertToResponse)
+            .collect(Collectors.toList());
+    }
+
+    public AccountBookResponse createAccountBook(AccountBookRequest request) {
+        AccountBook accountBook = new AccountBook();
+        accountBook.setDate(request.getDate());
+        accountBook.setAmount(request.getAmount());
+        accountBook.setDescription(request.getDescription());
+        
+        accountBook.setAction(actionRepository.findById(request.getActionId())
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Action ID not found"
+            )));
+        
+        accountBook.setCategory(categoryRepository.findById(request.getCategoryId())
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Category ID not found"
+            )));
+        
+        AccountBook saved = accountBookRepository.save(accountBook);
+        return convertToResponse(saved);
+    }
+
+    private AccountBookResponse convertToResponse(AccountBook accountBook) {
+        return new AccountBookResponse(
+            accountBook.getId().toString(),
+            accountBook.getDate().toString(),
+            accountBook.getAmount(),
+            accountBook.getDescription(),
+            accountBook.getAction().getActionDescription(),
+            accountBook.getCategory().getCategoryDescription()
+        );
+    }
+}
+```
+
+### Repository layer
+
+Repositories extend Spring Data JPA interfaces for database operations:
+
+```java
+public interface AccountBookRepository extends JpaRepository<AccountBook, Long> {
+    // Custom query methods can be added here
+    // Spring Data JPA automatically implements basic CRUD operations
+}
+```
+
+```java
+public interface ActionRepository extends JpaRepository<Action, String> {
+}
+```
+
+```java
+public interface CategoryRepository extends JpaRepository<Category, String> {
+}
+```
+
+<Info>
+Spring Data JPA provides built-in implementations for common operations like `findAll()`, `findById()`, `save()`, and `deleteById()`.
+</Info>
+
+## API endpoints
+
+### Account books
+
+<CodeGroup>
+```bash GET /api/account-books
+# Get all account books
+curl http://localhost:8080/api/account-books
+```
+
+```bash POST /api/account-books
+# Create new account book
+curl -X POST http://localhost:8080/api/account-books \
+  -H "Content-Type: application/json" \
+  -d '{
+    "date": "2026-03-01T10:00:00",
+    "amount": 100.00,
+    "description": "Grocery shopping",
+    "actionId": "OUT",
+    "categoryId": "FOOD"
+  }'
+```
+
+```bash PUT /api/account-books/{id}
+# Update account book
+curl -X PUT http://localhost:8080/api/account-books/1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "date": "2026-03-01T10:00:00",
+    "amount": 150.00,
+    "description": "Grocery shopping (updated)",
+    "actionId": "OUT",
+    "categoryId": "FOOD"
+  }'
+```
+
+```bash DELETE /api/account-books/{id}
+# Delete account book
+curl -X DELETE http://localhost:8080/api/account-books/1
+```
+
+```bash DELETE /api/account-books/batch
+# Batch delete account books
+curl -X DELETE http://localhost:8080/api/account-books/batch \
+  -H "Content-Type: application/json" \
+  -d '[1, 2, 3]'
+```
+</CodeGroup>
+
+### Actions (income/expense types)
+
+```bash
+# Get all actions
+GET /api/actions
+
+# Create action
+POST /api/actions
+
+# Update action
+PUT /api/actions/{id}
+
+# Delete action
+DELETE /api/actions/{id}
+```
+
+### Categories
+
+```bash
+# Get all categories
+GET /api/categories
+
+# Create category
+POST /api/categories
+
+# Update category
+PUT /api/categories/{id}
+
+# Delete category
+DELETE /api/categories/{id}
+```
+
+### Health check
+
+```bash
+# Check API status
+GET /api/health
+```
+
+## Configuration
+
+### Application properties
+
+Configure the application in `src/main/resources/application.properties`:
+
+```properties
+# Database configuration
+spring.datasource.url=jdbc:postgresql://localhost:5432/easyact
+spring.datasource.username=postgres
+spring.datasource.password=postgres
+
+# JPA/Hibernate configuration
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+
+# Server configuration
+server.port=8080
+
+# OpenAPI documentation
+springdoc.api-docs.path=/api-docs
+springdoc.swagger-ui.path=/swagger-ui.html
+```
+
+### OpenAPI configuration
+
+Swagger documentation is configured in `OpenAPIConfig.java`:
+
+```java
+@Configuration
+public class OpenAPIConfig {
+    @Bean
+    public OpenAPI customOpenAPI() {
+        return new OpenAPI()
+            .info(new Info()
+                .title("EasyACT API")
+                .version("1.0.0")
+                .description("Personal finance management API")
+            );
+    }
+}
+```
+
+Access Swagger UI at: `http://localhost:8080/swagger-ui.html`
+
+## Maven configuration
+
+The `pom.xml` defines project dependencies:
+
+```xml
+<dependencies>
+    <!-- Spring Boot Starters -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-webmvc</artifactId>
+    </dependency>
+
+    <!-- Database -->
+    <dependency>
+        <groupId>org.postgresql</groupId>
+        <artifactId>postgresql</artifactId>
+        <scope>runtime</scope>
+    </dependency>
+
+    <!-- Utilities -->
+    <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <optional>true</optional>
+    </dependency>
+
+    <!-- API Documentation -->
+    <dependency>
+        <groupId>org.springdoc</groupId>
+        <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        <version>2.6.0</version>
+    </dependency>
+</dependencies>
+```
+
+## Error handling
+
+The application uses Spring's `ResponseStatusException` for error handling:
+
+```java
+public void deleteAccountBook(Long id) {
+    if (!accountBookRepository.existsById(id)) {
+        throw new ResponseStatusException(
+            HttpStatus.NOT_FOUND,
+            "AccountBook ID " + id + " not found"
+        );
+    }
+    accountBookRepository.deleteById(id);
+}
+```
+
+## Best practices
+
+### Dependency injection
+
+Use constructor-based dependency injection (recommended by Spring):
+
+```java
+@Service
+public class AccountBookService {
+    private final AccountBookRepository repository;
+    
+    // Constructor injection
+    public AccountBookService(AccountBookRepository repository) {
+        this.repository = repository;
+    }
+}
+```
+
+### DTO pattern
+
+Always use DTOs to separate internal models from API contracts:
+
+```java
+public record AccountBookRequest(
+    LocalDateTime date,
+    Double amount,
+    String description,
+    String actionId,
+    String categoryId
+) {}
+
+public record AccountBookResponse(
+    String id,
+    String date,
+    Double amount,
+    String description,
+    String action,
+    String category
+) {}
+```
+
+### Transaction management
+
+Use `@Transactional` for operations that require atomicity:
+
+```java
+@Transactional
+public void deleteAccountBooksBatch(List<Long> ids) {
+    List<AccountBook> accountBooks = accountBookRepository.findAllById(ids);
+    if (accountBooks.size() != ids.size()) {
+        throw new ResponseStatusException(
+            HttpStatus.NOT_FOUND,
+            "Some AccountBook IDs not found"
+        );
+    }
+    accountBookRepository.deleteAllInBatch(accountBooks);
+}
+```
+
+<Info>
+Transactional methods automatically rollback on exceptions, ensuring data consistency.
+</Info>

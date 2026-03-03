@@ -1,0 +1,365 @@
+---
+title: 'Actions'
+description: 'Manage income and expense action types'
+---
+
+## Overview
+
+Actions define the type of financial transaction, such as income ("IN") or expense ("OUT"). Each action has a unique ID and a description. Actions are referenced by account book entries to categorize transactions as income or expenses.
+
+## Data model
+
+### ActionResponse
+
+<ResponseField name="id" type="string" required>
+  Unique identifier for the action (e.g., "IN", "OUT")
+</ResponseField>
+
+<ResponseField name="actionDescription" type="string" required>
+  Human-readable description of the action (e.g., "收入" for income, "支出" for expense)
+</ResponseField>
+
+### ActionRequest
+
+<ParamField body="id" type="string" required>
+  Unique identifier for the action. This should be a short code like "IN" or "OUT".
+</ParamField>
+
+<ParamField body="actionDescription" type="string" required>
+  Description of the action type
+</ParamField>
+
+---
+
+## Get all actions
+
+<Card>
+  <div>
+    **GET** `/api/actions`
+  </div>
+</Card>
+
+Retrieves a list of all action types.
+
+### Response
+
+<ResponseField name="response" type="array">
+  Array of ActionResponse objects
+</ResponseField>
+
+### Example request
+
+<CodeGroup>
+```bash curl
+curl http://localhost:8080/api/actions
+```
+
+```javascript JavaScript
+fetch('http://localhost:8080/api/actions')
+  .then(response => response.json())
+  .then(data => console.log(data));
+```
+
+```python Python
+import requests
+
+response = requests.get('http://localhost:8080/api/actions')
+data = response.json()
+print(data)
+```
+</CodeGroup>
+
+### Example response
+
+```json
+[
+  {
+    "id": "IN",
+    "actionDescription": "收入"
+  },
+  {
+    "id": "OUT",
+    "actionDescription": "支出"
+  }
+]
+```
+
+---
+
+## Create action
+
+<Card>
+  <div>
+    **POST** `/api/actions`
+  </div>
+</Card>
+
+Creates a new action type.
+
+### Request body
+
+<ParamField body="id" type="string" required>
+  Unique identifier for the action (e.g., "IN", "OUT")
+</ParamField>
+
+<ParamField body="actionDescription" type="string" required>
+  Description of the action type
+</ParamField>
+
+### Example request
+
+<CodeGroup>
+```bash curl
+curl -X POST http://localhost:8080/api/actions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "IN",
+    "actionDescription": "收入"
+  }'
+```
+
+```javascript JavaScript
+fetch('http://localhost:8080/api/actions', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    id: 'IN',
+    actionDescription: '收入'
+  })
+});
+```
+
+```python Python
+import requests
+
+data = {
+    'id': 'IN',
+    'actionDescription': '收入'
+}
+
+response = requests.post(
+    'http://localhost:8080/api/actions',
+    json=data
+)
+```
+</CodeGroup>
+
+### Response
+
+Returns HTTP 200 on success, or HTTP 409 if an action with the same ID already exists.
+
+<Warning>
+  Action IDs must be unique. If you attempt to create an action with an existing ID, you will receive a 409 Conflict response.
+</Warning>
+
+---
+
+## Update action
+
+<Card>
+  <div>
+    **PUT** `/api/actions`
+  </div>
+</Card>
+
+Updates an existing action type.
+
+<Note>
+  Unlike other resources, the update endpoint for actions does not include the ID in the path. Instead, the ID is provided in the request body.
+</Note>
+
+### Request body
+
+<ParamField body="id" type="string" required>
+  ID of the action to update
+</ParamField>
+
+<ParamField body="actionDescription" type="string" required>
+  New description for the action
+</ParamField>
+
+### Example request
+
+<CodeGroup>
+```bash curl
+curl -X PUT http://localhost:8080/api/actions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "IN",
+    "actionDescription": "收入 (Updated)"
+  }'
+```
+
+```javascript JavaScript
+fetch('http://localhost:8080/api/actions', {
+  method: 'PUT',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    id: 'IN',
+    actionDescription: '收入 (Updated)'
+  })
+});
+```
+
+```python Python
+import requests
+
+data = {
+    'id': 'IN',
+    'actionDescription': '收入 (Updated)'
+}
+
+response = requests.put(
+    'http://localhost:8080/api/actions',
+    json=data
+)
+```
+</CodeGroup>
+
+### Response
+
+Returns HTTP 200 on success, or HTTP 404 if the action is not found.
+
+---
+
+## Delete action
+
+<Card>
+  <div>
+    **DELETE** `/api/actions/{id}`
+  </div>
+</Card>
+
+Deletes a specific action type.
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  ID of the action to delete
+</ParamField>
+
+### Example request
+
+<CodeGroup>
+```bash curl
+curl -X DELETE http://localhost:8080/api/actions/IN
+```
+
+```javascript JavaScript
+fetch('http://localhost:8080/api/actions/IN', {
+  method: 'DELETE'
+});
+```
+
+```python Python
+import requests
+
+response = requests.delete('http://localhost:8080/api/actions/IN')
+```
+</CodeGroup>
+
+### Response
+
+Returns HTTP 200 on success, or HTTP 404 if the action is not found.
+
+<Warning>
+  Deleting an action that is referenced by existing account book entries may cause data integrity issues. Make sure to handle references appropriately before deletion.
+</Warning>
+
+---
+
+## Batch delete actions
+
+<Card>
+  <div>
+    **DELETE** `/api/actions/batch`
+  </div>
+</Card>
+
+Deletes multiple action types at once.
+
+### Request body
+
+<ParamField body="ids" type="array" required>
+  Array of action IDs to delete
+</ParamField>
+
+### Example request
+
+<CodeGroup>
+```bash curl
+curl -X DELETE http://localhost:8080/api/actions/batch \
+  -H "Content-Type: application/json" \
+  -d '["IN", "OUT"]'
+```
+
+```javascript JavaScript
+fetch('http://localhost:8080/api/actions/batch', {
+  method: 'DELETE',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(['IN', 'OUT'])
+});
+```
+
+```python Python
+import requests
+
+ids = ['IN', 'OUT']
+response = requests.delete(
+    'http://localhost:8080/api/actions/batch',
+    json=ids
+)
+```
+</CodeGroup>
+
+### Response
+
+Returns HTTP 200 on success.
+
+---
+
+## Common use cases
+
+<AccordionGroup>
+  <Accordion title="Setting up default actions">
+    Most accounting systems need at least two basic actions: income and expense. Here's how to set them up:
+
+    ```bash
+    # Create income action
+    curl -X POST http://localhost:8080/api/actions \
+      -H "Content-Type: application/json" \
+      -d '{"id": "IN", "actionDescription": "收入"}'
+
+    # Create expense action
+    curl -X POST http://localhost:8080/api/actions \
+      -H "Content-Type: application/json" \
+      -d '{"id": "OUT", "actionDescription": "支出"}'
+    ```
+  </Accordion>
+
+  <Accordion title="Listing all actions for a dropdown">
+    When building a user interface, you often need to populate a dropdown with available actions:
+
+    ```javascript
+    async function loadActions() {
+      const response = await fetch('http://localhost:8080/api/actions');
+      const actions = await response.json();
+      
+      // Populate dropdown
+      const select = document.getElementById('action-select');
+      actions.forEach(action => {
+        const option = document.createElement('option');
+        option.value = action.id;
+        option.textContent = action.actionDescription;
+        select.appendChild(option);
+      });
+    }
+    ```
+  </Accordion>
+</AccordionGroup>

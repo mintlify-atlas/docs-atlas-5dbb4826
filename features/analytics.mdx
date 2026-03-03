@@ -1,0 +1,293 @@
+---
+title: Analytics
+description: Visualize and understand your finances with powerful analytics and charts
+---
+
+EasyACT provides comprehensive analytics and visualizations to help you understand your financial situation at a glance. The analytics dashboard transforms your transaction data into actionable insights through interactive charts and key metrics.
+
+## Financial overview
+
+The overview section displays three critical financial metrics for the selected month:
+
+<CardGroup cols={3}>
+  <Card title="Total income" icon="trending-up" color="#A2D0FA">
+    Sum of all income transactions for the period
+  </Card>
+  <Card title="Total expense" icon="trending-down" color="#FAA2A2">
+    Sum of all expense transactions for the period
+  </Card>
+  <Card title="Net balance" icon="wallet" color="#90EE90">
+    Income minus expenses, showing your savings
+  </Card>
+</CardGroup>
+
+Each metric card includes:
+
+- **Icon indicator** - Visual representation of the metric type
+- **Label** - Description in both Chinese and English
+- **Formatted value** - Currency-formatted number with thousands separators
+
+<Info>
+  The overview metrics update automatically when you select a different month using the date picker at the top of the analytics page.
+</Info>
+
+## Viewing analytics
+
+Access the analytics dashboard through the "Financial Report" view:
+
+<Steps>
+  <Step title="Navigate to analytics">
+    Click on the chart/analytics navigation item to open the Financial Report view.
+  </Step>
+  
+  <Step title="Select time period">
+    Use the month picker in the header to choose which month you want to analyze:
+    - Displays in "YYYY-MM" format
+    - Defaults to the current month
+    - Click to open a calendar popup for easy selection
+  </Step>
+  
+  <Step title="Review metrics and charts">
+    The page automatically loads and displays:
+    - Overview cards with income, expense, and balance
+    - Category breakdown chart with expense analysis
+    - Recent transactions list
+    - Annual income and expense trend chart
+  </Step>
+</Steps>
+
+<Tip>
+  The analytics page automatically refreshes data every 60 seconds, ensuring your charts always reflect the latest transactions.
+</Tip>
+
+## Category breakdown analysis
+
+The category breakdown is one of the most powerful analytical tools in EasyACT, helping you understand where your money goes.
+
+### Doughnut chart visualization
+
+The interactive doughnut chart displays:
+
+- **Category segments** - Each slice represents one spending category
+- **Proportional sizing** - Larger slices indicate higher spending
+- **Color coding** - Distinct colors for each category from a 6-color palette
+- **Data labels** - Amount shown directly on each segment
+- **Interactive tooltips** - Hover to see category name and exact amount
+
+### Category details table
+
+Below the chart, a detailed table shows all expense transactions:
+
+| Column | Description |
+|--------|-------------|
+| Category | Name with color-coded indicator dot |
+| Amount | Transaction amount in currency format |
+| Description | Optional transaction notes |
+| Date | Day of the month when transaction occurred |
+
+The table includes:
+
+- **Scrollable view** - Up to 400px height with virtual scrolling
+- **Sortable columns** - Click headers to sort by any field
+- **Resizable columns** - Drag column borders to adjust width
+- **Total calculation** - Sum displayed at the bottom in red
+
+<Note>
+  The category breakdown only includes expense transactions. Income transactions are excluded from this analysis to focus on spending patterns.
+</Note>
+
+## Recent transactions
+
+The analytics page includes a "Recent Accounts" component showing your latest transactions:
+
+- Displays the most recent transactions across all categories
+- Provides quick access to recent financial activity
+- Updates automatically when new transactions are added
+- Helps you verify recent entries at a glance
+
+<Info>
+  This component complements the full transaction list view by giving you a quick overview without leaving the analytics page.
+</Info>
+
+## Annual income and expense trends
+
+The trend chart provides a 12-month view of your financial patterns:
+
+### Chart features
+
+- **Combined bar and line chart** - Shows multiple data series simultaneously
+- **Monthly breakdown** - One data point for each month of the year
+- **Three data series**:
+  - Income (blue bars) - Total income per month
+  - Expenses (red bars) - Total expenses per month  
+  - Savings (green line) - Net balance per month
+
+### Interactive elements
+
+- **Hover tooltips** - Display exact values when you mouse over data points
+- **Legend** - Toggle data series visibility by clicking legend items
+- **Formatted currency** - Y-axis shows values with dollar signs and formatting
+- **Responsive design** - Chart adapts to different screen sizes
+
+<Steps>
+  <Step title="Understand the bars">
+    Blue bars show income and red bars show expenses for each month. The height represents the total amount.
+  </Step>
+  
+  <Step title="Follow the line">
+    The green line tracks your monthly savings (income minus expenses). When it's above zero, you saved money that month.
+  </Step>
+  
+  <Step title="Identify patterns">
+    Look for:
+    - Months with unusually high expenses
+    - Consistent income patterns
+    - Seasonal variations in spending
+    - Months where expenses exceeded income
+  </Step>
+</Steps>
+
+<Tip>
+  If the savings line dips below the zero line, it means you spent more than you earned that month. Use this insight to adjust your budget.
+</Tip>
+
+## Data calculations
+
+All analytics are calculated in real-time from your transaction data:
+
+### Monthly summaries
+
+The system filters transactions by year-month string:
+
+```javascript
+const yearMonthString = `${year}-${month}`
+const monthlyRecords = store.getRecordsByMonth(yearMonthString)
+```
+
+Then calculates:
+- Income: Sum of all transactions where action = "收入"
+- Expenses: Sum of all transactions where action = "支出"  
+- Savings: Income minus Expenses
+
+### Category grouping
+
+For category analysis, transactions are grouped by category:
+
+1. Filter to include only expense transactions
+2. Group by category field
+3. Sum amounts within each category group
+4. Calculate percentage of total for each category
+5. Sort by amount (largest to smallest)
+
+<Info>
+  All calculations happen client-side using the data stored in Pinia state. This provides instant updates without additional API calls.
+</Info>
+
+## Chart technologies
+
+EasyACT uses Chart.js for all visualizations:
+
+- **Chart.js 4.5.1** - Core charting library
+- **chartjs-plugin-datalabels** - Adds data labels to chart segments
+- **PrimeVue Chart component** - Vue wrapper for Chart.js
+- **Responsive configuration** - Charts adapt to container size
+- **Custom color palettes** - Predefined colors for consistency
+
+### Supported chart types
+
+- **Doughnut** - Used for category breakdown
+- **Bar** - Used for income/expense comparison
+- **Line** - Used for savings trend
+- **Combined** - Mixed bar and line charts
+
+<Note>
+  All charts are interactive with hover effects, tooltips, and clickable legends for enhanced data exploration.
+</Note>
+
+## Loading states
+
+To provide a smooth user experience, analytics includes loading indicators:
+
+- **Skeleton screens** - Displayed while data loads
+- **Loading spinners** - Shown during data refresh
+- **Empty states** - "No Record" message when no data exists
+- **Progressive rendering** - Charts appear as soon as data is available
+
+<Tip>
+  If you see a skeleton screen, your data is loading. This typically takes less than a second on a good connection.
+</Tip>
+
+## No data handling
+
+When you haven't recorded any transactions for the selected month:
+
+- Overview cards show zero values
+- Category chart displays a "No Record" message
+- Trend chart shows bars at zero height
+- Recent transactions list is empty
+
+This helps you understand that the lack of data is expected, not an error.
+
+## Performance optimization
+
+The analytics system is optimized for performance:
+
+- **Computed properties** - Charts recalculate only when data changes
+- **Virtual scrolling** - Handles large transaction lists efficiently  
+- **Lazy loading** - Components load data only when needed
+- **Debounced updates** - Prevents excessive recalculations
+- **Cached calculations** - Stores computed values in Pinia state
+
+<Info>
+  Even with thousands of transactions, the analytics page remains responsive thanks to Vue's reactive system and efficient data structures.
+</Info>
+
+## Using analytics insights
+
+Get the most value from your analytics:
+
+### Monthly review
+
+1. Check if your balance is positive or negative
+2. Identify your largest spending category
+3. Compare current month to previous months
+4. Look for unexpected expenses
+5. Celebrate when you meet savings goals
+
+### Trend analysis
+
+1. Review the annual trend chart quarterly
+2. Identify seasonal spending patterns
+3. Set realistic budgets based on historical data
+4. Track improvement over time
+5. Adjust spending in problem categories
+
+### Category insights
+
+1. Find categories where you overspend
+2. Set category-specific budgets (mental or future feature)
+3. Look for opportunities to reduce expenses
+4. Ensure spending aligns with your priorities
+5. Track progress on spending reduction goals
+
+<Tip>
+  Schedule a monthly "finance review" session where you spend 15 minutes reviewing your analytics. This habit can significantly improve your financial awareness.
+</Tip>
+
+## Future analytics features
+
+Potential enhancements to the analytics system:
+
+- Budget vs. actual comparison charts
+- Year-over-year growth analysis  
+- Category budget tracking with progress bars
+- Spending forecasts based on historical data
+- Export reports to PDF or Excel
+- Custom date range selection
+- Income source breakdown
+- Savings rate calculations
+- Financial goal tracking
+
+<Info>
+  The modular architecture makes it easy to add new analytics features as the application evolves.
+</Info>

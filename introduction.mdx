@@ -1,0 +1,119 @@
+---
+title: Introduction to EasyACT
+description: A modern personal finance management application that helps you track expenses, visualize spending patterns, and achieve your financial goals
+---
+
+<img
+  className="block"
+  src="/images/hero-light.svg"
+  alt="Hero Light"
+/>
+
+## Welcome to EasyACT
+
+EasyACT is a personal finance management web application designed to make expense tracking simple and insightful. With an intuitive interface and powerful visualization tools, you can easily record daily transactions, analyze your spending patterns, and take control of your financial future.
+
+<CardGroup cols={2}>
+  <Card
+    title="Quickstart"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Get EasyACT up and running in minutes with Docker Compose
+  </Card>
+  <Card
+    title="API reference"
+    icon="code"
+    href="http://localhost:8080/swagger-ui.html"
+  >
+    Explore the complete REST API documentation with Swagger UI
+  </Card>
+  <Card
+    title="Architecture"
+    icon="diagram-project"
+    href="/deployment/architecture"
+  >
+    Learn about the technical stack and system design
+  </Card>
+  <Card
+    title="Contributing"
+    icon="github"
+    href="https://github.com/RL-Small-Project/EasyACT"
+  >
+    Report issues and contribute to the project on GitHub
+  </Card>
+</CardGroup>
+
+## Key features
+
+<CardGroup cols={3}>
+  <Card title="Easy expense tracking" icon="wallet">
+    Quickly add income and expense records with customizable category management
+  </Card>
+  <Card title="Visual analytics" icon="chart-line">
+    View spending trends and category distributions through interactive charts
+  </Card>
+  <Card title="Multiple ledgers" icon="book">
+    Manage separate ledgers for different purposes and financial accounts
+  </Card>
+</CardGroup>
+
+## Technology stack
+
+EasyACT is built with modern, production-ready technologies:
+
+### Frontend
+
+- **Vue 3** (3.5.25) - Progressive JavaScript framework
+- **PrimeVue** (4.5.3) - Rich UI component library
+- **Tailwind CSS** (4.1.18) - Utility-first CSS framework
+- **Chart.js** (4.5.1) - Beautiful data visualization
+- **Pinia** (3.0.4) - Intuitive state management
+- **Vite** (7.2.4) - Lightning-fast build tool
+
+### Backend
+
+- **Spring Boot** (4.0.1) - Enterprise Java framework
+- **Java** (25) - Robust programming language
+- **Spring Data JPA** - Simplified data access
+- **PostgreSQL** (15) - Reliable relational database
+- **SpringDoc OpenAPI** (2.6.0) - Automated API documentation
+
+### Deployment
+
+- **Docker Compose** - One-command deployment
+- **Nginx** - High-performance web server
+- **PostgreSQL** - Persistent data storage
+
+## System architecture
+
+EasyACT uses a modern three-tier architecture with containerized deployment:
+
+```
+┌─────────────┐      ┌─────────────┐      ┌─────────────┐
+│             │      │             │      │             │
+│   Web UI    │─────▶│   API       │─────▶│  Database   │
+│  (Vue.js)   │      │ (Spring     │      │ (PostgreSQL)│
+│   Nginx     │      │  Boot)      │      │             │
+│             │      │             │      │             │
+└─────────────┘      └─────────────┘      └─────────────┘
+   Port: 8000           Port: 8080          Port: 5432
+```
+
+<Note>
+  All three services run in Docker containers and communicate through a private bridge network for security and isolation.
+</Note>
+
+## Next steps
+
+<Steps>
+  <Step title="Get started">
+    Follow the [quickstart guide](/quickstart) to install and run EasyACT locally
+  </Step>
+  <Step title="Explore the API">
+    Check out the [Swagger UI](http://localhost:8080/swagger-ui.html) to understand available endpoints
+  </Step>
+  <Step title="Learn the architecture">
+    Read about the [system architecture](/deployment/architecture) to understand how EasyACT works
+  </Step>
+</Steps>

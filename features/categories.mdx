@@ -1,0 +1,254 @@
+---
+title: Categories
+description: Organize transactions with customizable categories in EasyACT
+---
+
+Categories are a fundamental feature in EasyACT that help you organize and analyze your financial transactions. By assigning categories to each transaction, you can gain insights into your spending patterns and identify areas for improvement.
+
+## Built-in categories
+
+EasyACT comes with four default categories to get you started:
+
+<CardGroup cols={2}>
+  <Card title="Food" icon="utensils">
+    Dining, groceries, and all food-related expenses
+  </Card>
+  <Card title="Traffic" icon="car">
+    Transportation costs including transit, gas, and parking
+  </Card>
+  <Card title="Entertainment" icon="gamepad">
+    Movies, games, and leisure activities
+  </Card>
+  <Card title="Other" icon="ellipsis">
+    Miscellaneous transactions that don't fit other categories
+  </Card>
+</CardGroup>
+
+Each category is represented in the system with:
+
+- **ID** - Unique identifier (e.g., "Food", "Traffic", "Game", "Other")
+- **Category Description** - Human-readable label (e.g., "飲食", "交通", "娛樂", "其他")
+
+## How categories work
+
+### Category structure
+
+Categories are stored in the database as a separate table:
+
+```java
+@Entity
+@Table(name = "categories")
+public class Category {
+    @Id
+    @Column(name = "id")
+    private String id;
+    
+    @Column(name = "category_description")
+    private String categoryDescription;
+    
+    @OneToMany(mappedBy = "category")
+    private List<AccountBook> accountBooks;
+}
+```
+
+This relational design provides:
+
+- **Data consistency** - Category names are standardized across all transactions
+- **Easy updates** - Changing a category description updates it everywhere
+- **Referential integrity** - Transactions always link to valid categories
+
+<Info>
+  Categories use a one-to-many relationship with account books. One category can be associated with many transactions, but each transaction has exactly one category.
+</Info>
+
+## Assigning categories
+
+When you record a transaction, selecting a category is required:
+
+<Steps>
+  <Step title="Open the transaction form">
+    Navigate to the "Add Record" page to create a new transaction.
+  </Step>
+  
+  <Step title="Choose from available categories">
+    Click the category dropdown to see all available options. Select the one that best matches your transaction.
+  </Step>
+  
+  <Step title="Submit the transaction">
+    The selected category is saved with your transaction and used for analytics and reporting.
+  </Step>
+</Steps>
+
+<Note>
+  If you try to submit a transaction without selecting a category, you'll see a validation error: "Please select a category."
+</Note>
+
+## Auto-creation of categories
+
+EasyACT intelligently manages categories in the database:
+
+When you submit a new transaction:
+1. The system checks if the selected category exists in the database
+2. If it doesn't exist, a new category record is automatically created
+3. The transaction is then linked to the category
+
+This ensures that:
+- You never have orphaned category references
+- The database always has complete category data
+- Future queries will find all necessary information
+
+<Tip>
+  This auto-creation feature means you don't need to manually set up categories before using them. Just select a category and EasyACT handles the rest.
+</Tip>
+
+## Visual category indicators
+
+Categories are represented visually throughout the application with color-coded indicators:
+
+### In transaction lists
+
+Each category displays with a colored dot next to its name:
+
+| Category | Color |
+|----------|-------|
+| Food | Red (#FF6B6B) |
+| Traffic | Teal (#4ECDC4) |
+| Entertainment | Yellow (#FFE66D) |
+| Shopping | Mint (#95E1D3) |
+| Healthcare | Pink (#F38181) |
+| Education | Purple (#AA96DA) |
+| Other | Rose (#FCBAD3) |
+
+### In charts and analytics
+
+The category breakdown chart uses a dynamic color palette:
+
+- Colors are automatically assigned from a predefined set
+- Each category gets a consistent color across all views
+- The color wheel cycles through 6 distinct colors
+- Tooltips and legends use matching colors for easy identification
+
+<Info>
+  The color scheme is designed to be visually distinct and accessible, making it easy to differentiate categories at a glance.
+</Info>
+
+## Category analytics
+
+Categories power several analytical features in EasyACT:
+
+### Category breakdown chart
+
+The category breakdown (in ChartView) shows:
+
+- **Doughnut chart** - Visual representation of spending by category
+- **Data labels** - Amount shown directly on chart segments
+- **Detailed table** - List of all transactions in each category
+- **Total calculation** - Sum of all expenses by category
+
+<Steps>
+  <Step title="Navigate to analytics">
+    Go to the "Financial Report" view to see category-based charts.
+  </Step>
+  
+  <Step title="Select a month">
+    Use the month picker to choose which period to analyze.
+  </Step>
+  
+  <Step title="View category breakdown">
+    The chart automatically groups all expenses by category and displays:
+    - Percentage of total for each category
+    - Absolute amount spent per category
+    - Individual transactions in each category
+  </Step>
+</Steps>
+
+### Category totals
+
+For each category, EasyACT calculates:
+
+- Total amount spent in the selected time period
+- Number of transactions in that category
+- Percentage of total expenses
+- List of individual transactions
+
+## Category filtering
+
+While category-specific filtering isn't explicitly shown in the current UI, the underlying system supports:
+
+- Filtering transactions by category ID
+- Grouping transactions by category
+- Sorting categories by total amount
+- Calculating category-wise statistics
+
+<Tip>
+  Future updates may include dedicated category filter controls in the transaction list, allowing you to view only transactions from specific categories.
+</Tip>
+
+## Managing categories
+
+### Changing transaction categories
+
+You can recategorize existing transactions using the edit feature:
+
+1. Click the edit button on any transaction in the list
+2. Select a different category from the dropdown
+3. Save the changes
+
+The transaction is immediately updated and analytics recalculate.
+
+### Category consistency
+
+To maintain meaningful analytics:
+
+- Use the same category for similar transactions
+- Avoid creating too many categories
+- Choose the most specific category that applies
+- Use "Other" sparingly as a catch-all
+
+<Warning>
+  Inconsistent category usage can make it harder to analyze your spending patterns. Try to stick to standard categories whenever possible.
+</Warning>
+
+## Category API endpoints
+
+The backend provides RESTful endpoints for category management:
+
+| Operation | Endpoint | Method |
+|-----------|----------|--------|
+| Get all categories | `/api/categories` | GET |
+| Create category | `/api/categories` | POST |
+| Update category | `/api/categories/{id}` | PUT |
+| Delete category | `/api/categories/{id}` | DELETE |
+
+<Note>
+  While these endpoints exist, the current UI primarily uses the GET endpoint to fetch available categories and the POST endpoint during transaction creation.
+</Note>
+
+## Best practices for category usage
+
+To get the most value from categories:
+
+1. **Be consistent** - Always use the same category for similar expenses
+2. **Think ahead** - Choose categories that will be useful for analysis later
+3. **Don't over-categorize** - Too many categories can be overwhelming
+4. **Review regularly** - Check category totals monthly to spot trends
+5. **Adjust as needed** - Recategorize transactions if you made a mistake
+
+<Tip>
+  Before submitting a transaction, ask yourself: "Will I want to see this grouped with similar transactions?" This helps you choose the right category.
+</Tip>
+
+## Future category features
+
+While not currently implemented, potential future enhancements include:
+
+- Custom category creation from the UI
+- Category icons and custom colors
+- Subcategories for more detailed tracking
+- Category budgets and spending limits
+- Category-based reports and exports
+- Archive or hide unused categories
+
+<Info>
+  The flexible category system is designed to support these features with minimal changes to the underlying data structure.
+</Info>

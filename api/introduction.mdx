@@ -1,0 +1,108 @@
+---
+title: 'Introduction'
+description: 'Getting started with the EasyACT API'
+---
+
+## Overview
+
+The EasyACT API is a RESTful API that provides endpoints for managing your accounting data. This API allows you to create, read, update, and delete account books, actions (income/expense types), and categories.
+
+## Base URL
+
+All API requests should be made to:
+
+```
+http://localhost:8080/api
+```
+
+## API version
+
+Current version: **1.0.0**
+
+## Response format
+
+All responses are returned in JSON format. The API uses standard HTTP response codes:
+
+- `200` - Success
+- `404` - Resource not found
+- `409` - Conflict (e.g., duplicate ID)
+
+## Interactive API documentation
+
+EasyACT includes Swagger UI for interactive API exploration and testing. You can access it at:
+
+```
+http://localhost:8080/swagger-ui.html
+```
+
+The Swagger UI provides:
+- Complete API documentation with request/response schemas
+- Interactive testing of all endpoints
+- Example values for requests
+- Real-time API responses
+
+## Authentication
+
+The current version of the EasyACT API does not require authentication. All endpoints are publicly accessible when running the application locally.
+
+<Note>
+  This API is designed for local development and personal use. If you plan to deploy it in a production environment, consider implementing authentication and authorization mechanisms.
+</Note>
+
+## CORS support
+
+All API endpoints include CORS (Cross-Origin Resource Sharing) support, allowing requests from any origin. This is configured using the `@CrossOrigin` annotation on all controllers.
+
+## Available resources
+
+The API provides endpoints for three main resources:
+
+<CardGroup cols={3}>
+  <Card title="Account books" icon="book" href="/api/account-books">
+    Manage financial transactions and records
+  </Card>
+  <Card title="Actions" icon="arrow-right-arrow-left" href="/api/actions">
+    Define income and expense types
+  </Card>
+  <Card title="Categories" icon="tags" href="/api/categories">
+    Organize transactions by category
+  </Card>
+</CardGroup>
+
+## Quick start
+
+Here's a simple example to get you started:
+
+<CodeGroup>
+```bash curl
+# Get all account books
+curl http://localhost:8080/api/account-books
+```
+
+```javascript JavaScript
+// Get all account books
+fetch('http://localhost:8080/api/account-books')
+  .then(response => response.json())
+  .then(data => console.log(data));
+```
+
+```python Python
+import requests
+
+# Get all account books
+response = requests.get('http://localhost:8080/api/account-books')
+data = response.json()
+print(data)
+```
+</CodeGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Account books API" icon="book" href="/api/account-books">
+    Learn how to manage financial transactions
+  </Card>
+  <Card title="Actions API" icon="arrow-right-arrow-left" href="/api/actions">
+    Configure income and expense types
+  </Card>
+</CardGroup>

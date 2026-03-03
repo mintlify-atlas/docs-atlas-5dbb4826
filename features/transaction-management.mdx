@@ -1,0 +1,169 @@
+---
+title: Transaction management
+description: Record and manage your income and expenses with EasyACT
+---
+
+EasyACT makes it simple to record and track all your financial transactions. Whether you're logging daily expenses or recording income, the intuitive interface helps you stay on top of your finances.
+
+## Adding a new transaction
+
+To record a transaction in EasyACT, navigate to the "Add Record" page where you'll find a comprehensive form to capture all transaction details.
+
+<Steps>
+  <Step title="Select transaction date and time">
+    Use the date picker to select when the transaction occurred. You can choose both the date and time with precision down to the second.
+    
+    - The date picker displays an inline calendar for easy date selection
+    - Time can be set using a 24-hour format time picker
+    - Both fields default to the current date and time for quick entry
+  </Step>
+  
+  <Step title="Choose transaction type">
+    Select whether this is an expense or income transaction:
+    
+    - **Expenses** - Money you've spent
+    - **Income** - Money you've received
+    
+    This field is required and validation will prevent submission without a selection.
+  </Step>
+  
+  <Step title="Select a category">
+    Choose the appropriate category for your transaction. Built-in categories include:
+    
+    - Food - Dining, groceries, and food-related expenses
+    - Traffic - Transportation costs like transit, gas, and parking
+    - Entertainment - Movies, games, and leisure activities
+    - Other - Miscellaneous transactions
+    
+    <Note>
+      Categories are automatically created in the database if they don't already exist when you submit a transaction.
+    </Note>
+  </Step>
+  
+  <Step title="Enter the amount">
+    Input the transaction amount using the currency-formatted number input:
+    
+    - Amounts are displayed in TWD (Taiwan Dollar) format
+    - Use the increment/decrement buttons for quick adjustments
+    - The amount must be greater than 0 to submit
+  </Step>
+  
+  <Step title="Add a description (optional)">
+    Provide additional context about the transaction with an optional description field:
+    
+    - Maximum length of 10 characters
+    - Examples: "Subway ride", "Lunch", "Salary"
+    - This field is entirely optional
+  </Step>
+  
+  <Step title="Submit the transaction">
+    Click the **Submit** button to save your transaction. You'll see:
+    
+    - A success toast notification confirming the record was added
+    - Error messages if any required fields are missing or invalid
+    - The form remains on screen for adding additional transactions
+    
+    Use the **Reset** button to clear all fields and start fresh.
+  </Step>
+</Steps>
+
+## Viewing transaction history
+
+All your recorded transactions are displayed in the "Transaction List" view, providing a comprehensive overview of your financial activity.
+
+### Transaction list features
+
+The transaction list is powered by a sortable, scrollable data table with the following capabilities:
+
+- **Real-time updates** - Data refreshes automatically every 60 seconds
+- **Date sorting** - Transactions are sorted by date in descending order (newest first)
+- **Column sorting** - Click any column header to sort by that field
+- **Scrollable view** - Handles large datasets with virtual scrolling up to 80vh height
+- **Responsive design** - Adapts to different screen sizes
+
+### Understanding the columns
+
+Each transaction displays the following information:
+
+| Column | Description |
+|--------|-------------|
+| Action | Color-coded tag showing "Income" (green) or "Expenses" (red) |
+| Category | Category name with a colored indicator dot |
+| Amount | Transaction amount formatted with currency symbol |
+| Description | Optional notes about the transaction |
+| Transaction Date | The date when the transaction occurred |
+| Actions | Edit button to modify the transaction |
+
+<Info>
+  Category colors are automatically assigned using a predefined color palette to help you quickly identify different transaction types visually.
+</Info>
+
+## Editing transactions
+
+You can modify any existing transaction by clicking the edit button (pencil icon) in the transaction list.
+
+<Steps>
+  <Step title="Open the edit dialog">
+    Click the pencil icon on any transaction row to open the edit modal dialog.
+  </Step>
+  
+  <Step title="Modify transaction details">
+    The edit dialog displays all current transaction information pre-filled:
+    
+    - Update the date and time if needed
+    - Change the transaction type (income/expense)
+    - Select a different category
+    - Adjust the amount
+    - Edit or add a description
+  </Step>
+  
+  <Step title="Save your changes">
+    Click **Submit** to save the updated transaction. The changes are immediately reflected in your transaction list and analytics.
+  </Step>
+</Steps>
+
+<Note>
+  The edit dialog uses the same validation rules as the add form. All required fields must be valid before you can save changes.
+</Note>
+
+## Deleting transactions
+
+EasyACT supports both single and batch deletion of transactions to help you keep your records clean.
+
+### Batch deletion
+
+<Steps>
+  <Step title="Select transactions">
+    Use the checkboxes in the leftmost column to select one or more transactions you want to delete.
+  </Step>
+  
+  <Step title="Click the delete button">
+    When you have transactions selected, a delete button with a badge showing the count appears in the top-right corner.
+  </Step>
+  
+  <Step title="Confirm deletion">
+    A confirmation dialog will ask you to confirm the deletion. This prevents accidental data loss.
+  </Step>
+  
+  <Step title="Deletion complete">
+    After confirmation, the selected transactions are permanently deleted and a success notification is displayed.
+  </Step>
+</Steps>
+
+<Warning>
+  Deleted transactions cannot be recovered. Always double-check your selection before confirming deletion.
+</Warning>
+
+## Validation and error handling
+
+EasyACT includes comprehensive validation to ensure data quality:
+
+- **Required fields** - Action type and category must be selected
+- **Amount validation** - Amount must be greater than 0
+- **Description length** - Limited to 10 characters maximum
+- **Real-time feedback** - Fields highlight in red when invalid
+- **Toast notifications** - Clear error messages explain what needs to be corrected
+
+<Tip>
+  If you see a validation error, the form will display a toast notification explaining exactly what needs to be fixed. Address all errors before the submit button will process your transaction.
+</Tip>
