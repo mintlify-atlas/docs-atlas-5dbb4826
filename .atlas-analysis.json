@@ -1,0 +1,95 @@
+{
+  "projectType": "saas",
+  "projectName": "EasyACT",
+  "projectDescription": "A personal finance management web application for tracking income and expenses with visual analytics",
+  "theme": "almond",
+  "primaryColor": "#10b981",
+  "lightColor": "#34d399",
+  "darkColor": "#059669",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/transaction-management",
+              "features/account-books",
+              "features/categories",
+              "features/analytics"
+            ]
+          },
+          {
+            "group": "Deployment",
+            "pages": [
+              "deployment/docker-compose",
+              "deployment/architecture",
+              "deployment/configuration"
+            ]
+          },
+          {
+            "group": "Development",
+            "pages": [
+              "development/project-structure",
+              "development/frontend",
+              "development/backend",
+              "development/database"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api/introduction"
+            ]
+          },
+          {
+            "group": "Endpoints",
+            "pages": [
+              "api/account-books",
+              "api/actions",
+              "api/categories"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Quick transaction recording with income and expense tracking",
+    "Custom category management for organizing finances",
+    "Multiple account book support for different purposes",
+    "Visual charts for analyzing spending trends and category distribution",
+    "RESTful API with Swagger/OpenAPI documentation",
+    "Docker-based deployment with PostgreSQL database"
+  ],
+  "publicApiSurface": [
+    "GET /api/account-books - Get all account book entries",
+    "POST /api/account-books - Create new account book entry",
+    "PUT /api/account-books/{id} - Update account book entry",
+    "DELETE /api/account-books/{id} - Delete account book entry",
+    "DELETE /api/account-books/batch - Batch delete entries",
+    "GET /api/actions - Get all action types (income/expense)",
+    "POST /api/actions - Create new action type",
+    "PUT /api/actions - Update action type",
+    "DELETE /api/actions/{id} - Delete action type",
+    "DELETE /api/actions/batch - Batch delete action types",
+    "GET /api/categories - Get all categories",
+    "POST /api/categories - Create new category",
+    "PUT /api/categories - Update category",
+    "DELETE /api/categories/{id} - Delete category",
+    "DELETE /api/categories/batch - Batch delete categories"
+  ]
+}
